@@ -9,6 +9,12 @@ import { Session } from "@supabase/supabase-js";
 import { AppLayout } from "@/components/layout/AppLayout";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
+import Clients from "./pages/Clients";
+import Items from "./pages/Items";
+import Quotes from "./pages/Quotes";
+import Invoices from "./pages/Invoices";
+import Agenda from "./pages/Agenda";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -51,8 +57,14 @@ const App = () => {
             <Route path="/auth" element={!session ? <Auth /> : <Navigate to="/" />} />
             
             {session ? (
-              <Route element={<AppLayout><Dashboard /></AppLayout>}>
+              <Route element={<AppLayout />}>
                 <Route path="/" element={<Dashboard />} />
+                <Route path="/clients" element={<Clients />} />
+                <Route path="/items" element={<Items />} />
+                <Route path="/quotes" element={<Quotes />} />
+                <Route path="/invoices" element={<Invoices />} />
+                <Route path="/agenda" element={<Agenda />} />
+                <Route path="/settings" element={<Settings />} />
               </Route>
             ) : (
               <Route path="*" element={<Navigate to="/auth" />} />
