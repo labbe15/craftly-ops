@@ -10,9 +10,12 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Clients from "./pages/Clients";
+import ClientForm from "./pages/ClientForm";
 import Items from "./pages/Items";
 import Quotes from "./pages/Quotes";
+import QuoteForm from "./pages/QuoteForm";
 import Invoices from "./pages/Invoices";
+import InvoiceForm from "./pages/InvoiceForm";
 import Agenda from "./pages/Agenda";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
@@ -60,9 +63,12 @@ const App = () => {
               <Route element={<AppLayout />}>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/clients" element={<Clients />} />
+                <Route path="/clients/new" element={<ClientForm />} />
                 <Route path="/items" element={<Items />} />
                 <Route path="/quotes" element={<Quotes />} />
+                <Route path="/quotes/new" element={<QuoteForm />} />
                 <Route path="/invoices" element={<Invoices />} />
+                <Route path="/invoices/new" element={<InvoiceForm />} />
                 <Route path="/agenda" element={<Agenda />} />
                 <Route path="/settings" element={<Settings />} />
               </Route>
