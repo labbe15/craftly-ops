@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import Clients from "./pages/Clients";
 import ClientForm from "./pages/ClientForm";
 import Items from "./pages/Items";
+import ItemForm from "./pages/ItemForm";
 import Quotes from "./pages/Quotes";
 import QuoteForm from "./pages/QuoteForm";
 import Invoices from "./pages/Invoices";
@@ -65,6 +66,7 @@ const App = () => {
                 <Route path="/clients" element={<Clients />} />
                 <Route path="/clients/new" element={<ClientForm />} />
                 <Route path="/items" element={<Items />} />
+                <Route path="/items/new" element={<ItemForm />} />
                 <Route path="/quotes" element={<Quotes />} />
                 <Route path="/quotes/new" element={<QuoteForm />} />
                 <Route path="/invoices" element={<Invoices />} />
