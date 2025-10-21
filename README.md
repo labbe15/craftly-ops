@@ -1,73 +1,227 @@
-# Welcome to your Lovable project
+# Craftly Ops - CRM pour Artisans
 
-## Project info
+CRM complet pour artisans permettant la gestion de clients, devis, factures et agenda.
 
-**URL**: https://lovable.dev/projects/c4bbd907-773d-4a52-abac-32adc20e8982
+## 🚀 Fonctionnalités
 
-## How can I edit this code?
+- **Gestion des clients** : Créer, modifier, supprimer et visualiser vos clients
+- **Catalogue d'articles** : Gérer vos prestations et articles avec prix HT et TVA
+- **Devis** : Créer et suivre vos devis
+- **Factures** : Générer et gérer vos factures
+- **Agenda** : Planifier vos rendez-vous et interventions
+- **Dashboard** : Vue d'ensemble de votre activité
+- **Multi-tenant** : Isolation des données par organisation
 
-There are several ways of editing your application.
+## 🛠️ Stack Technique
 
-**Use Lovable**
+- **Frontend** : React 18 + TypeScript + Vite
+- **UI** : shadcn/ui + Tailwind CSS + Radix UI
+- **Backend** : Supabase (PostgreSQL + Auth + Storage)
+- **State Management** : TanStack Query (React Query)
+- **Forms** : React Hook Form + Zod
+- **Routing** : React Router v6
+- **Icons** : Lucide React
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/c4bbd907-773d-4a52-abac-32adc20e8982) and start prompting.
+## 📋 Prérequis
 
-Changes made via Lovable will be committed automatically to this repo.
+- Node.js 18+ et npm
+- Un compte Supabase (gratuit sur [supabase.com](https://supabase.com))
 
-**Use your preferred IDE**
+## 🔧 Installation
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### 1. Cloner le repository
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+```bash
+git clone <votre-repo-url>
+cd craftly-ops
+```
 
-Follow these steps:
+### 2. Installer les dépendances
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+```bash
+npm install
+```
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### 3. Configurer Supabase
 
-# Step 3: Install the necessary dependencies.
-npm i
+#### 3.1. Créer un projet Supabase
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+1. Allez sur [supabase.com](https://supabase.com) et créez un compte
+2. Créez un nouveau projet
+3. Notez votre **URL du projet** et votre **clé publique (anon key)**
+
+#### 3.2. Appliquer les migrations
+
+Dans le dashboard Supabase, allez dans **SQL Editor** et exécutez les fichiers de migration dans l'ordre :
+
+1. `supabase/migrations/20251016175106_0e793ceb-aa21-4352-ac4d-c936084ce81c.sql`
+2. `supabase/migrations/20251021000000_fix_multi_tenant.sql`
+
+Ces migrations créent :
+- Les tables (clients, items, quotes, invoices, etc.)
+- Les politiques RLS pour la sécurité multi-tenant
+- Le système d'auto-provisioning des organisations
+
+#### 3.3. Configurer les variables d'environnement
+
+```bash
+cp .env.example .env
+```
+
+Éditez `.env` et ajoutez vos credentials Supabase :
+
+```env
+VITE_SUPABASE_URL=https://votre-projet-id.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=votre-cle-publique
+VITE_SUPABASE_PROJECT_ID=votre-projet-id
+```
+
+### 4. Lancer l'application en développement
+
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+L'application sera accessible sur `http://localhost:8080`
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## 🏗️ Build pour la production
 
-**Use GitHub Codespaces**
+```bash
+npm run build
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Les fichiers optimisés seront générés dans le dossier `dist/`
 
-## What technologies are used for this project?
+## 🚀 Déploiement
 
-This project is built with:
+### Option 1 : Vercel
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+1. Connectez votre repository GitHub à Vercel
+2. Configurez les variables d'environnement dans Vercel :
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_PUBLISHABLE_KEY`
+   - `VITE_SUPABASE_PROJECT_ID`
+3. Déployez !
 
-## How can I deploy this project?
+### Option 2 : Netlify
 
-Simply open [Lovable](https://lovable.dev/projects/c4bbd907-773d-4a52-abac-32adc20e8982) and click on Share -> Publish.
+1. Connectez votre repository GitHub à Netlify
+2. Build command : `npm run build`
+3. Publish directory : `dist`
+4. Configurez les variables d'environnement
+5. Déployez !
 
-## Can I connect a custom domain to my Lovable project?
+### Option 3 : Serveur VPS (avec Nginx)
 
-Yes, you can!
+```bash
+# Build l'application
+npm run build
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+# Copiez le contenu de dist/ sur votre serveur
+scp -r dist/* user@votre-serveur:/var/www/craftly-ops/
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+# Configuration Nginx
+server {
+    listen 80;
+    server_name votre-domaine.com;
+    root /var/www/craftly-ops;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}
+```
+
+## 📁 Structure du Projet
+
+```
+craftly-ops/
+├── src/
+│   ├── components/       # Composants réutilisables
+│   │   ├── layout/      # Layout (AppLayout, Sidebar, TopBar)
+│   │   └── ui/          # Composants UI (shadcn/ui)
+│   ├── hooks/           # Hooks personnalisés
+│   │   └── useOrgId.ts  # Hook pour gérer l'organisation
+│   ├── integrations/    # Intégrations externes
+│   │   └── supabase/    # Client et types Supabase
+│   ├── lib/             # Utilitaires
+│   ├── pages/           # Pages de l'application
+│   │   ├── Auth.tsx
+│   │   ├── Dashboard.tsx
+│   │   ├── Clients.tsx
+│   │   ├── ClientForm.tsx
+│   │   ├── Items.tsx
+│   │   ├── ItemForm.tsx
+│   │   ├── Quotes.tsx
+│   │   ├── Invoices.tsx
+│   │   └── ...
+│   ├── App.tsx          # Composant racine avec routing
+│   └── main.tsx         # Point d'entrée
+├── supabase/
+│   └── migrations/      # Migrations SQL
+├── .env.example         # Template des variables d'environnement
+└── package.json
+```
+
+## 🔒 Sécurité
+
+Le projet utilise Row Level Security (RLS) de Supabase pour garantir :
+- **Isolation des données** : Chaque organisation voit uniquement ses propres données
+- **Authentification** : Seuls les utilisateurs authentifiés peuvent accéder aux données
+- **Auto-provisioning** : Chaque nouvel utilisateur obtient automatiquement sa propre organisation
+
+## 🧪 Tests
+
+```bash
+# Linter
+npm run lint
+
+# Build de test
+npm run build
+```
+
+## 📝 Développement
+
+### Ajouter une nouvelle page
+
+1. Créez le composant dans `src/pages/`
+2. Ajoutez la route dans `src/App.tsx`
+3. Ajoutez le lien dans `src/components/layout/AppSidebar.tsx`
+
+### Ajouter une nouvelle table Supabase
+
+1. Créez une migration SQL dans `supabase/migrations/`
+2. Ajoutez les types dans `src/integrations/supabase/types.ts`
+3. Créez les composants de formulaire et liste
+
+## 🤝 Contribution
+
+Les contributions sont les bienvenues ! N'hésitez pas à ouvrir une issue ou une pull request.
+
+## 📄 License
+
+MIT
+
+## 🆘 Support
+
+Pour toute question ou problème :
+1. Vérifiez que les migrations Supabase sont bien appliquées
+2. Vérifiez que les variables d'environnement sont correctement configurées
+3. Consultez les logs de la console navigateur
+4. Ouvrez une issue sur GitHub
+
+## 🎯 Roadmap
+
+- [ ] Génération de PDF pour devis et factures
+- [ ] Envoi d'emails automatiques
+- [ ] Gestion des paiements
+- [ ] Statistiques avancées
+- [ ] Mode multi-utilisateur par organisation
+- [ ] Application mobile (React Native)
+- [ ] Export des données (CSV, Excel)
+- [ ] Intégration comptabilité
+
+---
+
+Développé avec ❤️ pour les artisans
