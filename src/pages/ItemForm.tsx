@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,13 +9,42 @@ import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
+import { useOrgId } from "@/hooks/useOrgId";
+import { useQuery } from "@tanstack/react-query";
 
 export default function ItemForm() {
   const navigate = useNavigate();
+  const { id } = useParams();
   const [loading, setLoading] = useState(false);
+  const { orgId, isLoading: isLoadingOrgId } = useOrgId();
+
+  const isEditMode = !!id;
+
+  // Fetch item data if in edit mode
+  const { data: item, isLoading: isLoadingItem } = useQuery({
+    queryKey: ["item", id],
+    queryFn: async () => {
+      if (!id) return null;
+      const { data, error } = await supabase
+        .from("items")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id,
+  });
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    if (!orgId) {
+      toast.error("Organisation non trouvée");
+      return;
+    }
+
     setLoading(true);
 
     const formData = new FormData(e.currentTarget);
@@ -25,21 +54,36 @@ export default function ItemForm() {
       unit_price_ht: parseFloat(formData.get("unit_price_ht") as string),
       vat_rate: parseFloat(formData.get("vat_rate") as string),
       unit: formData.get("unit") as string,
-      org_id: crypto.randomUUID(), // Temporary
+      org_id: orgId,
     };
 
-    const { error } = await supabase.from("items").insert(data);
+    let error;
+    if (isEditMode && id) {
+      const result = await supabase.from("items").update(data).eq("id", id);
+      error = result.error;
+    } else {
+      const result = await supabase.from("items").insert(data);
+      error = result.error;
+    }
 
     if (error) {
-      toast.error("Erreur lors de la création de l'article");
+      toast.error(`Erreur lors de ${isEditMode ? "la modification" : "la création"} de l'article`);
       console.error(error);
     } else {
-      toast.success("Article créé avec succès");
+      toast.success(`Article ${isEditMode ? "modifié" : "créé"} avec succès`);
       navigate("/items");
     }
 
     setLoading(false);
   };
+
+  if (isLoadingOrgId || isLoadingItem) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-lg">Chargement...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -47,7 +91,7 @@ export default function ItemForm() {
         <Button variant="ghost" size="icon" onClick={() => navigate("/items")}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="text-3xl font-bold">Nouvel article</h1>
+        <h1 className="text-3xl font-bold">{isEditMode ? "Modifier l'article" : "Nouvel article"}</h1>
       </div>
 
       <Card>
@@ -58,29 +102,30 @@ export default function ItemForm() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Nom de l'article *</Label>
-              <Input id="name" name="name" required />
+              <Input id="name" name="name" required defaultValue={item?.name || ""} />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
-              <Textarea id="description" name="description" rows={4} />
+              <Textarea id="description" name="description" rows={4} defaultValue={item?.description || ""} />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="unit_price_ht">Prix unitaire HT *</Label>
-                <Input 
-                  id="unit_price_ht" 
-                  name="unit_price_ht" 
-                  type="number" 
-                  step="0.01" 
+                <Input
+                  id="unit_price_ht"
+                  name="unit_price_ht"
+                  type="number"
+                  step="0.01"
                   min="0"
-                  required 
+                  required
+                  defaultValue={item?.unit_price_ht || ""}
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="vat_rate">Taux TVA (%) *</Label>
-                <Select name="vat_rate" defaultValue="20">
+                <Select name="vat_rate" defaultValue={item?.vat_rate?.toString() || "20"}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -96,7 +141,7 @@ export default function ItemForm() {
 
             <div className="space-y-2">
               <Label htmlFor="unit">Unité</Label>
-              <Select name="unit" defaultValue="u">
+              <Select name="unit" defaultValue={item?.unit || "u"}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -116,7 +161,7 @@ export default function ItemForm() {
                 Annuler
               </Button>
               <Button type="submit" disabled={loading}>
-                {loading ? "Création..." : "Créer l'article"}
+                {loading ? (isEditMode ? "Modification..." : "Création...") : (isEditMode ? "Modifier l'article" : "Créer l'article")}
               </Button>
             </div>
           </form>

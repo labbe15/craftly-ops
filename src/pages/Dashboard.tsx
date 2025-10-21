@@ -2,15 +2,80 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText, Receipt, TrendingUp, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { format, startOfMonth, endOfMonth } from "date-fns";
 
 export default function Dashboard() {
   const navigate = useNavigate();
 
+  // Query for pending quotes
+  const { data: pendingQuotesCount = 0 } = useQuery({
+    queryKey: ["pendingQuotes"],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("quotes")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "sent");
+
+      if (error) throw error;
+      return count || 0;
+    },
+  });
+
+  // Query for unpaid invoices
+  const { data: unpaidInvoicesCount = 0 } = useQuery({
+    queryKey: ["unpaidInvoices"],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("invoices")
+        .select("*", { count: "exact", head: true })
+        .in("status", ["sent", "overdue"]);
+
+      if (error) throw error;
+      return count || 0;
+    },
+  });
+
+  // Query for revenue this month
+  const { data: monthlyRevenue = 0 } = useQuery({
+    queryKey: ["monthlyRevenue"],
+    queryFn: async () => {
+      const startDate = startOfMonth(new Date());
+      const endDate = endOfMonth(new Date());
+
+      const { data, error } = await supabase
+        .from("invoices")
+        .select("totals_ttc")
+        .eq("status", "paid")
+        .gte("paid_at", startDate.toISOString())
+        .lte("paid_at", endDate.toISOString());
+
+      if (error) throw error;
+
+      return data.reduce((sum, invoice) => sum + (invoice.totals_ttc || 0), 0);
+    },
+  });
+
+  // Query for overdue invoices
+  const { data: overdueInvoicesCount = 0 } = useQuery({
+    queryKey: ["overdueInvoices"],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("invoices")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "overdue");
+
+      if (error) throw error;
+      return count || 0;
+    },
+  });
+
   const stats = [
-    { title: "Devis en attente", value: "0", icon: FileText, color: "text-primary" },
-    { title: "Factures impayées", value: "0", icon: Receipt, color: "text-warning" },
-    { title: "Encaissé ce mois", value: "0 €", icon: TrendingUp, color: "text-success" },
-    { title: "Relances à venir", value: "0", icon: Clock, color: "text-destructive" },
+    { title: "Devis en attente", value: pendingQuotesCount.toString(), icon: FileText, color: "text-primary" },
+    { title: "Factures impayées", value: unpaidInvoicesCount.toString(), icon: Receipt, color: "text-warning" },
+    { title: "Encaissé ce mois", value: `${monthlyRevenue.toFixed(2)} €`, icon: TrendingUp, color: "text-success" },
+    { title: "Relances à venir", value: overdueInvoicesCount.toString(), icon: Clock, color: "text-destructive" },
   ];
 
   return (

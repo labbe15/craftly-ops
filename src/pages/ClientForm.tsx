@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,14 +7,43 @@ import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useOrgId } from "@/hooks/useOrgId";
+import { useQuery } from "@tanstack/react-query";
 
 export default function ClientForm() {
   const navigate = useNavigate();
+  const { id } = useParams();
   const [loading, setLoading] = useState(false);
+  const { orgId, isLoading: isLoadingOrgId } = useOrgId();
+
+  const isEditMode = !!id;
+
+  // Fetch client data if in edit mode
+  const { data: client, isLoading: isLoadingClient } = useQuery({
+    queryKey: ["client", id],
+    queryFn: async () => {
+      if (!id) return null;
+      const { data, error } = await supabase
+        .from("clients")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id,
+  });
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    if (!orgId) {
+      toast.error("Organisation non trouvée");
+      return;
+    }
+
     setLoading(true);
 
     const formData = new FormData(e.currentTarget);
@@ -25,21 +54,36 @@ export default function ClientForm() {
       phone: formData.get("phone") as string,
       address: formData.get("address") as string,
       notes: formData.get("notes") as string,
-      org_id: crypto.randomUUID(), // Temporary - will be replaced with actual org logic
+      org_id: orgId,
     };
 
-    const { error } = await supabase.from("clients").insert(data);
+    let error;
+    if (isEditMode && id) {
+      const result = await supabase.from("clients").update(data).eq("id", id);
+      error = result.error;
+    } else {
+      const result = await supabase.from("clients").insert(data);
+      error = result.error;
+    }
 
     if (error) {
-      toast.error("Erreur lors de la création du client");
+      toast.error(`Erreur lors de ${isEditMode ? "la modification" : "la création"} du client`);
       console.error(error);
     } else {
-      toast.success("Client créé avec succès");
+      toast.success(`Client ${isEditMode ? "modifié" : "créé"} avec succès`);
       navigate("/clients");
     }
 
     setLoading(false);
   };
+
+  if (isLoadingOrgId || isLoadingClient) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-lg">Chargement...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -47,7 +91,7 @@ export default function ClientForm() {
         <Button variant="ghost" size="icon" onClick={() => navigate("/clients")}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="text-3xl font-bold">Nouveau client</h1>
+        <h1 className="text-3xl font-bold">{isEditMode ? "Modifier le client" : "Nouveau client"}</h1>
       </div>
 
       <Card>
@@ -59,33 +103,33 @@ export default function ClientForm() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Nom de l'entreprise *</Label>
-                <Input id="name" name="name" required />
+                <Input id="name" name="name" required defaultValue={client?.name || ""} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="contact_name">Nom du contact</Label>
-                <Input id="contact_name" name="contact_name" />
+                <Input id="contact_name" name="contact_name" defaultValue={client?.contact_name || ""} />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" name="email" type="email" />
+                <Input id="email" name="email" type="email" defaultValue={client?.email || ""} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phone">Téléphone</Label>
-                <Input id="phone" name="phone" />
+                <Input id="phone" name="phone" defaultValue={client?.phone || ""} />
               </div>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="address">Adresse</Label>
-              <Textarea id="address" name="address" rows={3} />
+              <Textarea id="address" name="address" rows={3} defaultValue={client?.address || ""} />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="notes">Notes</Label>
-              <Textarea id="notes" name="notes" rows={4} />
+              <Textarea id="notes" name="notes" rows={4} defaultValue={client?.notes || ""} />
             </div>
 
             <div className="flex justify-end gap-3 pt-4">
@@ -93,7 +137,7 @@ export default function ClientForm() {
                 Annuler
               </Button>
               <Button type="submit" disabled={loading}>
-                {loading ? "Création..." : "Créer le client"}
+                {loading ? (isEditMode ? "Modification..." : "Création...") : (isEditMode ? "Modifier le client" : "Créer le client")}
               </Button>
             </div>
           </form>
