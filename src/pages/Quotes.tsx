@@ -3,14 +3,18 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
-import { Plus, Eye, Trash2 } from "lucide-react";
+import { Plus, Eye, Trash2, FileDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { pdf } from "@react-pdf/renderer";
+import { QuotePDF } from "@/components/pdf/QuotePDF";
+import { useState } from "react";
 
 export default function Quotes() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   const { data: quotes, isLoading } = useQuery({
     queryKey: ["quotes"],
@@ -38,6 +42,77 @@ export default function Quotes() {
       toast.error("Erreur lors de la suppression");
     },
   });
+
+  // Fetch org settings
+  const { data: orgSettings } = useQuery({
+    queryKey: ["orgSettings"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("org_settings")
+        .select("*")
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const downloadPDF = async (quoteId: string) => {
+    try {
+      setDownloadingId(quoteId);
+
+      // Fetch full quote data with items and client
+      const { data: quote, error: quoteError } = await supabase
+        .from("quotes")
+        .select("*, clients(*)")
+        .eq("id", quoteId)
+        .single();
+
+      if (quoteError) throw quoteError;
+
+      // Fetch quote items
+      const { data: quoteItems, error: itemsError } = await supabase
+        .from("quote_items")
+        .select("*")
+        .eq("quote_id", quoteId);
+
+      if (itemsError) throw itemsError;
+
+      // Prepare data for PDF
+      const pdfData = {
+        ...quote,
+        client: quote.clients,
+        items: quoteItems.map((item) => ({
+          description: item.description,
+          qty: Number(item.qty),
+          unit: item.unit || "u",
+          unit_price_ht: Number(item.unit_price_ht),
+          vat_rate: Number(item.vat_rate),
+          line_total_ht: Number(item.line_total_ht),
+        })),
+      };
+
+      // Generate PDF
+      const blob = await pdf(
+        <QuotePDF quote={pdfData} orgSettings={orgSettings || undefined} />
+      ).toBlob();
+
+      // Download PDF
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `devis-${quote.number}.pdf`;
+      link.click();
+      URL.revokeObjectURL(url);
+
+      toast.success("PDF téléchargé avec succès");
+    } catch (error) {
+      console.error("Error downloading PDF:", error);
+      toast.error("Erreur lors du téléchargement du PDF");
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
@@ -91,8 +166,16 @@ export default function Quotes() {
                         <Button variant="ghost" size="icon">
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button 
-                          variant="ghost" 
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => downloadPDF(quote.id)}
+                          disabled={downloadingId === quote.id}
+                        >
+                          <FileDown className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
                           size="icon"
                           onClick={() => deleteMutation.mutate(quote.id)}
                         >
