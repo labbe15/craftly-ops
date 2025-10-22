@@ -163,7 +163,11 @@ export default function Quotes() {
                     <TableCell>{new Date(quote.created_at).toLocaleDateString()}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="icon">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => navigate(`/quotes/${quote.id}`)}
+                        >
                           <Eye className="h-4 w-4" />
                         </Button>
                         <Button

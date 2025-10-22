@@ -163,7 +163,11 @@ export default function Invoices() {
                     <TableCell>{new Date(invoice.created_at).toLocaleDateString()}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="icon">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => navigate(`/invoices/${invoice.id}`)}
+                        >
                           <Eye className="h-4 w-4" />
                         </Button>
                         <Button
