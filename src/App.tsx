@@ -15,8 +15,10 @@ import Items from "./pages/Items";
 import ItemForm from "./pages/ItemForm";
 import Quotes from "./pages/Quotes";
 import QuoteForm from "./pages/QuoteForm";
+import QuoteDetail from "./pages/QuoteDetail";
 import Invoices from "./pages/Invoices";
 import InvoiceForm from "./pages/InvoiceForm";
+import InvoiceDetail from "./pages/InvoiceDetail";
 import Agenda from "./pages/Agenda";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
@@ -69,8 +71,10 @@ const App = () => {
                 <Route path="/items/new" element={<ItemForm />} />
                 <Route path="/quotes" element={<Quotes />} />
                 <Route path="/quotes/new" element={<QuoteForm />} />
+                <Route path="/quotes/:id" element={<QuoteDetail />} />
                 <Route path="/invoices" element={<Invoices />} />
                 <Route path="/invoices/new" element={<InvoiceForm />} />
+                <Route path="/invoices/:id" element={<InvoiceDetail />} />
                 <Route path="/agenda" element={<Agenda />} />
                 <Route path="/settings" element={<Settings />} />
               </Route>
