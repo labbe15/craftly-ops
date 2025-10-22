@@ -16,11 +16,15 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Plus, Trash2, FileDown, Save } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { pdf } from "@react-pdf/renderer";
 import { InvoicePDF } from "@/components/pdf/InvoicePDF";
+import { PDFPreview } from "@/components/pdf/PDFPreview";
+import { SendEmailDialog } from "@/components/email/SendEmailDialog";
+import { AddPaymentDialog } from "@/components/payment/AddPaymentDialog";
+import { PaymentHistory } from "@/components/payment/PaymentHistory";
 
 interface InvoiceLineItem {
   id: string;
@@ -59,6 +63,40 @@ export default function InvoiceDetail() {
     },
     enabled: !!id,
   });
+
+  // Fetch linked quote if exists
+  const { data: linkedQuote } = useQuery({
+    queryKey: ["linkedQuote", invoice?.quote_id],
+    queryFn: async () => {
+      if (!invoice?.quote_id) return null;
+      const { data, error } = await supabase
+        .from("quotes")
+        .select("id, number, status")
+        .eq("id", invoice.quote_id)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!invoice?.quote_id,
+  });
+
+  // Fetch payments to calculate remaining amount
+  const { data: payments } = useQuery({
+    queryKey: ["payments", id],
+    queryFn: async () => {
+      if (!id) return [];
+      const { data, error } = await supabase
+        .from("payments")
+        .select("amount")
+        .eq("invoice_id", id);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id,
+  });
+
+  const totalPaid = payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
+  const remainingAmount = totals_ttc - totalPaid;
 
   // Fetch invoice items
   const { data: invoiceItems } = useQuery({
@@ -205,6 +243,53 @@ export default function InvoiceDetail() {
     return sum + vat;
   }, 0);
   const totals_ttc = totals_ht + totals_vat;
+
+  // Prepare preview data
+  const previewData = useMemo(() => {
+    const selectedClient = clients?.find((c) => c.id === selectedClientId);
+
+    if (!invoice || !selectedClient || lineItems.some((item) => !item.description.trim())) {
+      return null;
+    }
+
+    return {
+      number: invoiceNumber,
+      created_at: invoice.created_at,
+      due_date: dueDate,
+      notes: notes,
+      status: status,
+      totals_ht,
+      totals_vat,
+      totals_ttc,
+      client: {
+        name: selectedClient.name,
+        contact_name: selectedClient.contact_name || undefined,
+        email: selectedClient.email || undefined,
+        phone: selectedClient.phone || undefined,
+        address: selectedClient.address || undefined,
+      },
+      items: lineItems.map((item) => ({
+        description: item.description,
+        qty: item.qty,
+        unit: item.unit,
+        unit_price_ht: item.unit_price_ht,
+        vat_rate: item.vat_rate,
+        line_total_ht: item.line_total_ht,
+      })),
+    };
+  }, [
+    invoice,
+    clients,
+    selectedClientId,
+    invoiceNumber,
+    dueDate,
+    notes,
+    status,
+    lineItems,
+    totals_ht,
+    totals_vat,
+    totals_ttc,
+  ]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -361,17 +446,59 @@ export default function InvoiceDetail() {
             <div className="mt-2">{getStatusBadge(status)}</div>
           </div>
         </div>
-        <Button onClick={downloadPDF} disabled={downloadingPDF}>
-          <FileDown className="h-4 w-4 mr-2" />
-          {downloadingPDF ? "Téléchargement..." : "Télécharger PDF"}
-        </Button>
+        <div className="flex gap-2">
+          {previewData && (
+            <PDFPreview
+              type="invoice"
+              data={previewData}
+              orgSettings={orgSettings || undefined}
+              triggerText="Aperçu"
+              triggerVariant="outline"
+            />
+          )}
+          {previewData && invoice?.clients?.email && (
+            <SendEmailDialog
+              type="invoice"
+              documentId={invoice.id}
+              documentNumber={invoiceNumber}
+              documentData={previewData}
+              orgSettings={orgSettings || undefined}
+              orgId={invoice.org_id}
+              clientEmail={invoice.clients.email}
+              clientName={invoice.clients.name}
+            />
+          )}
+          <AddPaymentDialog
+            invoiceId={invoice.id}
+            invoiceNumber={invoiceNumber}
+            remainingAmount={remainingAmount}
+          />
+          <Button onClick={downloadPDF} disabled={downloadingPDF}>
+            <FileDown className="h-4 w-4 mr-2" />
+            {downloadingPDF ? "Téléchargement..." : "Télécharger PDF"}
+          </Button>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Header Info */}
         <Card>
           <CardHeader>
-            <CardTitle>Informations générales</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>Informations générales</CardTitle>
+              {linkedQuote && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <span>Créée depuis le devis:</span>
+                  <Button
+                    variant="link"
+                    className="h-auto p-0 text-primary"
+                    onClick={() => navigate(`/quotes/${linkedQuote.id}`)}
+                  >
+                    {linkedQuote.number}
+                  </Button>
+                </div>
+              )}
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -629,6 +756,12 @@ export default function InvoiceDetail() {
           </Button>
         </div>
       </form>
+
+      {/* Payment History */}
+      <PaymentHistory
+        invoiceId={invoice.id}
+        invoiceTotalTTC={totals_ttc}
+      />
     </div>
   );
 }

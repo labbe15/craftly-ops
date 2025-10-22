@@ -16,11 +16,14 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Plus, Trash2, FileDown, Save } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format, addDays } from "date-fns";
 import { pdf } from "@react-pdf/renderer";
 import { QuotePDF } from "@/components/pdf/QuotePDF";
+import { PDFPreview } from "@/components/pdf/PDFPreview";
+import { SendEmailDialog } from "@/components/email/SendEmailDialog";
+import { ConvertToInvoiceDialog } from "@/components/quote/ConvertToInvoiceDialog";
 
 interface QuoteLineItem {
   id: string;
@@ -213,6 +216,53 @@ export default function QuoteDetail() {
   }, 0);
   const totals_ttc = totals_ht + totals_vat;
 
+  // Prepare preview data
+  const previewData = useMemo(() => {
+    const selectedClient = clients?.find((c) => c.id === selectedClientId);
+
+    if (!quote || !selectedClient || lineItems.some((item) => !item.description.trim())) {
+      return null;
+    }
+
+    return {
+      number: quoteNumber,
+      created_at: quote.created_at,
+      expires_at: expiresAt,
+      terms_text: termsText,
+      notes: notes,
+      totals_ht,
+      totals_vat,
+      totals_ttc,
+      client: {
+        name: selectedClient.name,
+        contact_name: selectedClient.contact_name || undefined,
+        email: selectedClient.email || undefined,
+        phone: selectedClient.phone || undefined,
+        address: selectedClient.address || undefined,
+      },
+      items: lineItems.map((item) => ({
+        description: item.description,
+        qty: item.qty,
+        unit: item.unit,
+        unit_price_ht: item.unit_price_ht,
+        vat_rate: item.vat_rate,
+        line_total_ht: item.line_total_ht,
+      })),
+    };
+  }, [
+    quote,
+    clients,
+    selectedClientId,
+    quoteNumber,
+    expiresAt,
+    termsText,
+    notes,
+    lineItems,
+    totals_ht,
+    totals_vat,
+    totals_ttc,
+  ]);
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
@@ -372,10 +422,38 @@ export default function QuoteDetail() {
             <div className="mt-2">{getStatusBadge(status)}</div>
           </div>
         </div>
-        <Button onClick={downloadPDF} disabled={downloadingPDF}>
-          <FileDown className="h-4 w-4 mr-2" />
-          {downloadingPDF ? "Téléchargement..." : "Télécharger PDF"}
-        </Button>
+        <div className="flex gap-2">
+          {previewData && (
+            <PDFPreview
+              type="quote"
+              data={previewData}
+              orgSettings={orgSettings || undefined}
+              triggerText="Aperçu"
+              triggerVariant="outline"
+            />
+          )}
+          {previewData && quote?.clients?.email && (
+            <SendEmailDialog
+              type="quote"
+              documentId={quote.id}
+              documentNumber={quoteNumber}
+              documentData={previewData}
+              orgSettings={orgSettings || undefined}
+              orgId={quote.org_id}
+              clientEmail={quote.clients.email}
+              clientName={quote.clients.name}
+            />
+          )}
+          <ConvertToInvoiceDialog
+            quoteId={quote.id}
+            quoteNumber={quoteNumber}
+            quoteStatus={status}
+          />
+          <Button onClick={downloadPDF} disabled={downloadingPDF}>
+            <FileDown className="h-4 w-4 mr-2" />
+            {downloadingPDF ? "Téléchargement..." : "Télécharger PDF"}
+          </Button>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
