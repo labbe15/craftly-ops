@@ -23,6 +23,7 @@ import { pdf } from "@react-pdf/renderer";
 import { QuotePDF } from "@/components/pdf/QuotePDF";
 import { PDFPreview } from "@/components/pdf/PDFPreview";
 import { SendEmailDialog } from "@/components/email/SendEmailDialog";
+import { ConvertToInvoiceDialog } from "@/components/quote/ConvertToInvoiceDialog";
 
 interface QuoteLineItem {
   id: string;
@@ -443,6 +444,11 @@ export default function QuoteDetail() {
               clientName={quote.clients.name}
             />
           )}
+          <ConvertToInvoiceDialog
+            quoteId={quote.id}
+            quoteNumber={quoteNumber}
+            quoteStatus={status}
+          />
           <Button onClick={downloadPDF} disabled={downloadingPDF}>
             <FileDown className="h-4 w-4 mr-2" />
             {downloadingPDF ? "Téléchargement..." : "Télécharger PDF"}

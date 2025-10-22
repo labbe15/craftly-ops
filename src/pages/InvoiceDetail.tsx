@@ -63,6 +63,22 @@ export default function InvoiceDetail() {
     enabled: !!id,
   });
 
+  // Fetch linked quote if exists
+  const { data: linkedQuote } = useQuery({
+    queryKey: ["linkedQuote", invoice?.quote_id],
+    queryFn: async () => {
+      if (!invoice?.quote_id) return null;
+      const { data, error } = await supabase
+        .from("quotes")
+        .select("id, number, status")
+        .eq("id", invoice.quote_id)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!invoice?.quote_id,
+  });
+
   // Fetch invoice items
   const { data: invoiceItems } = useQuery({
     queryKey: ["invoiceItems", id],
@@ -446,7 +462,21 @@ export default function InvoiceDetail() {
         {/* Header Info */}
         <Card>
           <CardHeader>
-            <CardTitle>Informations générales</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>Informations générales</CardTitle>
+              {linkedQuote && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <span>Créée depuis le devis:</span>
+                  <Button
+                    variant="link"
+                    className="h-auto p-0 text-primary"
+                    onClick={() => navigate(`/quotes/${linkedQuote.id}`)}
+                  >
+                    {linkedQuote.number}
+                  </Button>
+                </div>
+              )}
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
