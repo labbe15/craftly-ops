@@ -23,6 +23,8 @@ import { pdf } from "@react-pdf/renderer";
 import { InvoicePDF } from "@/components/pdf/InvoicePDF";
 import { PDFPreview } from "@/components/pdf/PDFPreview";
 import { SendEmailDialog } from "@/components/email/SendEmailDialog";
+import { AddPaymentDialog } from "@/components/payment/AddPaymentDialog";
+import { PaymentHistory } from "@/components/payment/PaymentHistory";
 
 interface InvoiceLineItem {
   id: string;
@@ -78,6 +80,24 @@ export default function InvoiceDetail() {
     },
     enabled: !!invoice?.quote_id,
   });
+
+  // Fetch payments to calculate remaining amount
+  const { data: payments } = useQuery({
+    queryKey: ["payments", id],
+    queryFn: async () => {
+      if (!id) return [];
+      const { data, error } = await supabase
+        .from("payments")
+        .select("amount")
+        .eq("invoice_id", id);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id,
+  });
+
+  const totalPaid = payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
+  const remainingAmount = totals_ttc - totalPaid;
 
   // Fetch invoice items
   const { data: invoiceItems } = useQuery({
@@ -451,6 +471,11 @@ export default function InvoiceDetail() {
               clientName={invoice.clients.name}
             />
           )}
+          <AddPaymentDialog
+            invoiceId={invoice.id}
+            invoiceNumber={invoiceNumber}
+            remainingAmount={remainingAmount}
+          />
           <Button onClick={downloadPDF} disabled={downloadingPDF}>
             <FileDown className="h-4 w-4 mr-2" />
             {downloadingPDF ? "Téléchargement..." : "Télécharger PDF"}
@@ -752,6 +777,12 @@ export default function InvoiceDetail() {
           </Button>
         </div>
       </form>
+
+      {/* Payment History */}
+      <PaymentHistory
+        invoiceId={invoice.id}
+        invoiceTotalTTC={totals_ttc}
+      />
     </div>
   );
 }
