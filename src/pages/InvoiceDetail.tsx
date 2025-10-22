@@ -16,11 +16,12 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Plus, Trash2, FileDown, Save } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { pdf } from "@react-pdf/renderer";
 import { InvoicePDF } from "@/components/pdf/InvoicePDF";
+import { PDFPreview } from "@/components/pdf/PDFPreview";
 
 interface InvoiceLineItem {
   id: string;
@@ -208,6 +209,53 @@ export default function InvoiceDetail() {
   }, 0);
   const totals_ttc = totals_ht + totals_vat;
 
+  // Prepare preview data
+  const previewData = useMemo(() => {
+    const selectedClient = clients?.find((c) => c.id === selectedClientId);
+
+    if (!invoice || !selectedClient || lineItems.some((item) => !item.description.trim())) {
+      return null;
+    }
+
+    return {
+      number: invoiceNumber,
+      created_at: invoice.created_at,
+      due_date: dueDate,
+      notes: notes,
+      status: status,
+      totals_ht,
+      totals_vat,
+      totals_ttc,
+      client: {
+        name: selectedClient.name,
+        contact_name: selectedClient.contact_name || undefined,
+        email: selectedClient.email || undefined,
+        phone: selectedClient.phone || undefined,
+        address: selectedClient.address || undefined,
+      },
+      items: lineItems.map((item) => ({
+        description: item.description,
+        qty: item.qty,
+        unit: item.unit,
+        unit_price_ht: item.unit_price_ht,
+        vat_rate: item.vat_rate,
+        line_total_ht: item.line_total_ht,
+      })),
+    };
+  }, [
+    invoice,
+    clients,
+    selectedClientId,
+    invoiceNumber,
+    dueDate,
+    notes,
+    status,
+    lineItems,
+    totals_ht,
+    totals_vat,
+    totals_ttc,
+  ]);
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
@@ -364,10 +412,21 @@ export default function InvoiceDetail() {
             <div className="mt-2">{getStatusBadge(status)}</div>
           </div>
         </div>
-        <Button onClick={downloadPDF} disabled={downloadingPDF}>
-          <FileDown className="h-4 w-4 mr-2" />
-          {downloadingPDF ? "Téléchargement..." : "Télécharger PDF"}
-        </Button>
+        <div className="flex gap-2">
+          {previewData && (
+            <PDFPreview
+              type="invoice"
+              data={previewData}
+              orgSettings={orgSettings || undefined}
+              triggerText="Aperçu"
+              triggerVariant="outline"
+            />
+          )}
+          <Button onClick={downloadPDF} disabled={downloadingPDF}>
+            <FileDown className="h-4 w-4 mr-2" />
+            {downloadingPDF ? "Téléchargement..." : "Télécharger PDF"}
+          </Button>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">

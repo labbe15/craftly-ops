@@ -15,9 +15,10 @@ import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format, addDays } from "date-fns";
+import { PDFPreview } from "@/components/pdf/PDFPreview";
 
 interface QuoteLineItem {
   id: string;
@@ -187,6 +188,52 @@ export default function QuoteForm() {
     return sum + vat;
   }, 0);
   const totals_ttc = totals_ht + totals_vat;
+
+  // Prepare preview data
+  const previewData = useMemo(() => {
+    const selectedClient = clients?.find((c) => c.id === selectedClientId);
+
+    if (!selectedClient || lineItems.some((item) => !item.description.trim())) {
+      return null;
+    }
+
+    return {
+      number: quoteNumber || "DEV-PREVIEW",
+      created_at: new Date().toISOString(),
+      expires_at: expiresAt,
+      terms_text: termsText,
+      notes: notes,
+      totals_ht,
+      totals_vat,
+      totals_ttc,
+      client: {
+        name: selectedClient.name,
+        contact_name: selectedClient.contact_name || undefined,
+        email: selectedClient.email || undefined,
+        phone: selectedClient.phone || undefined,
+        address: selectedClient.address || undefined,
+      },
+      items: lineItems.map((item) => ({
+        description: item.description,
+        qty: item.qty,
+        unit: item.unit,
+        unit_price_ht: item.unit_price_ht,
+        vat_rate: item.vat_rate,
+        line_total_ht: item.line_total_ht,
+      })),
+    };
+  }, [
+    clients,
+    selectedClientId,
+    quoteNumber,
+    expiresAt,
+    termsText,
+    notes,
+    lineItems,
+    totals_ht,
+    totals_vat,
+    totals_ttc,
+  ]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -535,6 +582,15 @@ export default function QuoteForm() {
           >
             Annuler
           </Button>
+          {previewData && (
+            <PDFPreview
+              type="quote"
+              data={previewData}
+              orgSettings={orgSettings || undefined}
+              triggerText="Aperçu PDF"
+              triggerVariant="outline"
+            />
+          )}
           <Button type="submit" disabled={loading}>
             {loading ? "Création..." : "Créer le devis"}
           </Button>
