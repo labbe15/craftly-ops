@@ -3,14 +3,17 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
-import { Plus, Eye, Trash2 } from "lucide-react";
+import { Plus, Eye, Trash2, Download, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { downloadQuotePDF } from "@/lib/quote-pdf-helper";
+import { useOrgId } from "@/hooks/useOrgId";
 
 export default function Quotes() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { orgId } = useOrgId();
 
   const { data: quotes, isLoading } = useQuery({
     queryKey: ["quotes"],
@@ -36,6 +39,16 @@ export default function Quotes() {
     },
     onError: () => {
       toast.error("Erreur lors de la suppression");
+    },
+  });
+
+  const downloadMutation = useMutation({
+    mutationFn: async (quoteId: string) => {
+      if (!orgId) throw new Error("Organization ID not found");
+      await downloadQuotePDF(quoteId, orgId);
+    },
+    onError: () => {
+      toast.error("Erreur lors du téléchargement du PDF");
     },
   });
 
@@ -91,8 +104,20 @@ export default function Quotes() {
                         <Button variant="ghost" size="icon">
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button 
-                          variant="ghost" 
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => downloadMutation.mutate(quote.id)}
+                          disabled={downloadMutation.isPending}
+                        >
+                          {downloadMutation.isPending ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Download className="h-4 w-4" />
+                          )}
+                        </Button>
+                        <Button
+                          variant="ghost"
                           size="icon"
                           onClick={() => deleteMutation.mutate(quote.id)}
                         >

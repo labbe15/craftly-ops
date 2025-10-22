@@ -3,6 +3,20 @@ import autoTable from "jspdf-autotable";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
+interface PDFSettings {
+  brand_primary?: string;
+  brand_secondary?: string;
+  footer_text?: string;
+  header_bg_url?: string;
+}
+
+function hexToRgb(hex: string): [number, number, number] {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result
+    ? [parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)]
+    : [37, 99, 235]; // Fallback to blue
+}
+
 interface QuoteData {
   number: string;
   client: {
@@ -35,12 +49,16 @@ interface InvoiceData extends QuoteData {
   dueDate?: Date;
 }
 
-export function generateQuotePDF(data: QuoteData): void {
+export function generateQuotePDF(data: QuoteData, settings?: PDFSettings): void {
   const doc = new jsPDF();
 
   // En-tête
+  const primaryColor = settings?.brand_primary
+    ? hexToRgb(settings.brand_primary)
+    : [37, 99, 235]; // blue-600
+
   doc.setFontSize(24);
-  doc.setTextColor(37, 99, 235); // blue-600
+  doc.setTextColor(...primaryColor);
   doc.text("DEVIS", 20, 20);
 
   // Numéro de devis
@@ -93,7 +111,7 @@ export function generateQuotePDF(data: QuoteData): void {
     head: [["Description", "Qté", "Unité", "P.U. HT", "TVA", "Total HT"]],
     body: tableData,
     theme: "striped",
-    headStyles: { fillColor: [37, 99, 235] },
+    headStyles: { fillColor: primaryColor },
     styles: { fontSize: 9 },
     columnStyles: {
       0: { cellWidth: 60 },
@@ -123,23 +141,26 @@ export function generateQuotePDF(data: QuoteData): void {
   doc.setFontSize(8);
   doc.setFont(undefined, "italic");
   doc.setTextColor(100, 100, 100);
-  doc.text(
-    "Devis valable 30 jours. TVA non applicable selon l'article 293 B du CGI.",
-    105,
-    280,
-    { align: "center" }
-  );
+  const footerText =
+    settings?.footer_text ||
+    "Devis valable 30 jours. TVA non applicable selon l'article 293 B du CGI.";
+  const footerLines = doc.splitTextToSize(footerText, 170);
+  doc.text(footerLines, 105, 280, { align: "center" });
 
   // Télécharger le PDF
   doc.save(`devis-${data.number}.pdf`);
 }
 
-export function generateInvoicePDF(data: InvoiceData): void {
+export function generateInvoicePDF(data: InvoiceData, settings?: PDFSettings): void {
   const doc = new jsPDF();
 
   // En-tête
+  const secondaryColor = settings?.brand_secondary
+    ? hexToRgb(settings.brand_secondary)
+    : [220, 38, 38]; // red-600
+
   doc.setFontSize(24);
-  doc.setTextColor(220, 38, 38); // red-600
+  doc.setTextColor(...secondaryColor);
   doc.text("FACTURE", 20, 20);
 
   // Numéro de facture
@@ -192,7 +213,7 @@ export function generateInvoicePDF(data: InvoiceData): void {
     head: [["Description", "Qté", "Unité", "P.U. HT", "TVA", "Total HT"]],
     body: tableData,
     theme: "striped",
-    headStyles: { fillColor: [220, 38, 38] },
+    headStyles: { fillColor: secondaryColor },
     styles: { fontSize: 9 },
     columnStyles: {
       0: { cellWidth: 60 },
@@ -227,12 +248,11 @@ export function generateInvoicePDF(data: InvoiceData): void {
   doc.setFontSize(8);
   doc.setFont(undefined, "italic");
   doc.setTextColor(100, 100, 100);
-  doc.text(
-    "TVA non applicable selon l'article 293 B du CGI. En cas de retard de paiement, indemnité forfaitaire de 40€.",
-    105,
-    280,
-    { align: "center" }
-  );
+  const footerText =
+    settings?.footer_text ||
+    "TVA non applicable selon l'article 293 B du CGI. En cas de retard de paiement, indemnité forfaitaire de 40€.";
+  const footerLines = doc.splitTextToSize(footerText, 170);
+  doc.text(footerLines, 105, 280, { align: "center" });
 
   // Télécharger le PDF
   doc.save(`facture-${data.number}.pdf`);
