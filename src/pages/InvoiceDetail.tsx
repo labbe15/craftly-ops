@@ -22,6 +22,7 @@ import { format } from "date-fns";
 import { pdf } from "@react-pdf/renderer";
 import { InvoicePDF } from "@/components/pdf/InvoicePDF";
 import { PDFPreview } from "@/components/pdf/PDFPreview";
+import { SendEmailDialog } from "@/components/email/SendEmailDialog";
 
 interface InvoiceLineItem {
   id: string;
@@ -420,6 +421,18 @@ export default function InvoiceDetail() {
               orgSettings={orgSettings || undefined}
               triggerText="Aperçu"
               triggerVariant="outline"
+            />
+          )}
+          {previewData && invoice?.clients?.email && (
+            <SendEmailDialog
+              type="invoice"
+              documentId={invoice.id}
+              documentNumber={invoiceNumber}
+              documentData={previewData}
+              orgSettings={orgSettings || undefined}
+              orgId={invoice.org_id}
+              clientEmail={invoice.clients.email}
+              clientName={invoice.clients.name}
             />
           )}
           <Button onClick={downloadPDF} disabled={downloadingPDF}>

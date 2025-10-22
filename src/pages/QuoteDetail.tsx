@@ -22,6 +22,7 @@ import { format, addDays } from "date-fns";
 import { pdf } from "@react-pdf/renderer";
 import { QuotePDF } from "@/components/pdf/QuotePDF";
 import { PDFPreview } from "@/components/pdf/PDFPreview";
+import { SendEmailDialog } from "@/components/email/SendEmailDialog";
 
 interface QuoteLineItem {
   id: string;
@@ -428,6 +429,18 @@ export default function QuoteDetail() {
               orgSettings={orgSettings || undefined}
               triggerText="Aperçu"
               triggerVariant="outline"
+            />
+          )}
+          {previewData && quote?.clients?.email && (
+            <SendEmailDialog
+              type="quote"
+              documentId={quote.id}
+              documentNumber={quoteNumber}
+              documentData={previewData}
+              orgSettings={orgSettings || undefined}
+              orgId={quote.org_id}
+              clientEmail={quote.clients.email}
+              clientName={quote.clients.name}
             />
           )}
           <Button onClick={downloadPDF} disabled={downloadingPDF}>
