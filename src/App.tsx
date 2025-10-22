@@ -21,6 +21,7 @@ import Invoices from "./pages/Invoices";
 import InvoiceForm from "./pages/InvoiceForm";
 import InvoiceDetail from "./pages/InvoiceDetail";
 import Agenda from "./pages/Agenda";
+import EventForm from "./pages/EventForm";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
@@ -80,6 +81,8 @@ const App = () => {
                 <Route path="/invoices/new" element={<InvoiceForm />} />
                 <Route path="/invoices/:id" element={<InvoiceDetail />} />
                 <Route path="/agenda" element={<Agenda />} />
+                <Route path="/agenda/new" element={<EventForm />} />
+                <Route path="/agenda/:id" element={<EventForm />} />
                 <Route path="/settings" element={<Settings />} />
               </Route>
             ) : (
