@@ -42,7 +42,6 @@ export default function InvoiceDetail() {
   const [invoiceNumber, setInvoiceNumber] = useState<string>("");
   const [status, setStatus] = useState<string>("draft");
   const [dueDate, setDueDate] = useState<string>("");
-  const [notes, setNotes] = useState<string>("");
   const [lineItems, setLineItems] = useState<InvoiceLineItem[]>([]);
 
   // Fetch invoice
@@ -122,7 +121,6 @@ export default function InvoiceDetail() {
       setDueDate(
         invoice.due_date ? format(new Date(invoice.due_date), "yyyy-MM-dd") : ""
       );
-      setNotes(invoice.notes || "");
     }
   }, [invoice]);
 
@@ -233,7 +231,6 @@ export default function InvoiceDetail() {
           client_id: selectedClientId,
           status,
           due_date: dueDate,
-          notes: notes,
           totals_ht,
           totals_vat,
           totals_ttc,
@@ -616,24 +613,6 @@ export default function InvoiceDetail() {
           </CardContent>
         </Card>
 
-        {/* Notes */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Notes</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes internes</Label>
-              <Textarea
-                id="notes"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Notes visibles uniquement en interne"
-                rows={3}
-              />
-            </div>
-          </CardContent>
-        </Card>
 
         {/* Actions */}
         <div className="flex justify-end gap-3">
