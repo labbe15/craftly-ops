@@ -1,44 +1,116 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Save } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 export default function ClientForm() {
   const navigate = useNavigate();
+  const { id } = useParams();
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  // Form state
+  const [name, setName] = useState("");
+  const [contactName, setContactName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
+  const [notes, setNotes] = useState("");
+
+  // Fetch client if editing
+  const { data: client } = useQuery({
+    queryKey: ["client", id],
+    queryFn: async () => {
+      if (!id) return null;
+      const { data, error } = await supabase
+        .from("clients")
+        .select("*")
+        .eq("id", id)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id,
+  });
+
+  // Fetch user's org_id
+  const { data: orgSettings } = useQuery({
+    queryKey: ["org_settings"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("org_settings")
+        .select("org_id")
+        .limit(1)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Populate form when editing
+  useEffect(() => {
+    if (client) {
+      setName(client.name || "");
+      setContactName(client.contact_name || "");
+      setEmail(client.email || "");
+      setPhone(client.phone || "");
+      setAddress(client.address || "");
+      setNotes(client.notes || "");
+    }
+  }, [client]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    const formData = new FormData(e.currentTarget);
-    const data = {
-      name: formData.get("name") as string,
-      contact_name: formData.get("contact_name") as string,
-      email: formData.get("email") as string,
-      phone: formData.get("phone") as string,
-      address: formData.get("address") as string,
-      notes: formData.get("notes") as string,
-      org_id: crypto.randomUUID(), // Temporary - will be replaced with actual org logic
-    };
+    try {
+      if (!orgSettings?.org_id) {
+        toast.error("Organisation non trouvée");
+        return;
+      }
 
-    const { error } = await supabase.from("clients").insert(data);
+      const data = {
+        name,
+        contact_name: contactName || null,
+        email: email || null,
+        phone: phone || null,
+        address: address || null,
+        notes: notes || null,
+        org_id: orgSettings.org_id,
+      };
 
-    if (error) {
-      toast.error("Erreur lors de la création du client");
-      console.error(error);
-    } else {
-      toast.success("Client créé avec succès");
+      if (id) {
+        // Update existing client
+        const { error } = await supabase
+          .from("clients")
+          .update(data)
+          .eq("id", id);
+
+        if (error) throw error;
+        toast.success("Client mis à jour avec succès");
+      } else {
+        // Create new client
+        const { error } = await supabase.from("clients").insert(data);
+
+        if (error) throw error;
+        toast.success("Client créé avec succès");
+      }
+
       navigate("/clients");
+    } catch (error: any) {
+      console.error(error);
+      toast.error(
+        `Erreur lors de ${id ? "la mise à jour" : "la création"} du client`
+      );
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
@@ -47,7 +119,9 @@ export default function ClientForm() {
         <Button variant="ghost" size="icon" onClick={() => navigate("/clients")}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="text-3xl font-bold">Nouveau client</h1>
+        <h1 className="text-3xl font-bold">
+          {id ? "Modifier le client" : "Nouveau client"}
+        </h1>
       </div>
 
       <Card>
@@ -59,41 +133,86 @@ export default function ClientForm() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Nom de l'entreprise *</Label>
-                <Input id="name" name="name" required />
+                <Input
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  placeholder="Ex: Entreprise Dupont"
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="contact_name">Nom du contact</Label>
-                <Input id="contact_name" name="contact_name" />
+                <Input
+                  id="contact_name"
+                  value={contactName}
+                  onChange={(e) => setContactName(e.target.value)}
+                  placeholder="Ex: Jean Dupont"
+                />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" name="email" type="email" />
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="contact@entreprise.fr"
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phone">Téléphone</Label>
-                <Input id="phone" name="phone" />
+                <Input
+                  id="phone"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="01 23 45 67 89"
+                />
               </div>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="address">Adresse</Label>
-              <Textarea id="address" name="address" rows={3} />
+              <Textarea
+                id="address"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                rows={3}
+                placeholder="Adresse complète du client..."
+              />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="notes">Notes</Label>
-              <Textarea id="notes" name="notes" rows={4} />
+              <Textarea
+                id="notes"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={4}
+                placeholder="Notes internes sur le client..."
+              />
             </div>
 
-            <div className="flex justify-end gap-3 pt-4">
-              <Button type="button" variant="outline" onClick={() => navigate("/clients")}>
+            <div className="flex justify-end gap-3 pt-4 border-t">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => navigate("/clients")}
+              >
                 Annuler
               </Button>
               <Button type="submit" disabled={loading}>
-                {loading ? "Création..." : "Créer le client"}
+                <Save className="h-4 w-4 mr-2" />
+                {loading
+                  ? id
+                    ? "Enregistrement..."
+                    : "Création..."
+                  : id
+                  ? "Enregistrer"
+                  : "Créer le client"}
               </Button>
             </div>
           </form>
