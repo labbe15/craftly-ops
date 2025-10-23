@@ -23,6 +23,7 @@ import InvoiceDetail from "./pages/InvoiceDetail";
 import Agenda from "./pages/Agenda";
 import EventForm from "./pages/EventForm";
 import Reminders from "./pages/Reminders";
+import ReminderSchedules from "./pages/ReminderSchedules";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
@@ -85,6 +86,7 @@ const App = () => {
                 <Route path="/agenda/new" element={<EventForm />} />
                 <Route path="/agenda/:id" element={<EventForm />} />
                 <Route path="/reminders" element={<Reminders />} />
+                <Route path="/reminders/schedules" element={<ReminderSchedules />} />
                 <Route path="/settings" element={<Settings />} />
               </Route>
             ) : (

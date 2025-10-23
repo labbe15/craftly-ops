@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,12 +14,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Bell, Mail, Clock, AlertCircle, Send, CheckCircle } from "lucide-react";
+import { Bell, Mail, Clock, AlertCircle, Send, CheckCircle, Settings } from "lucide-react";
 import { format, differenceInDays, addDays } from "date-fns";
 import { fr } from "date-fns/locale";
 import { toast } from "sonner";
 
 export default function Reminders() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [sendingReminder, setSendingReminder] = useState<string | null>(null);
 
@@ -119,7 +121,7 @@ export default function Reminders() {
     },
     onSuccess: (_, variables) => {
       toast.success(
-        `Relance envoyée pour ${variables.type === "quote" ? "le devis" : "la facture"} ${variables.number}`
+        `Relance envoyï¿½e pour ${variables.type === "quote" ? "le devis" : "la facture"} ${variables.number}`
       );
       queryClient.invalidateQueries({ queryKey: ["mail_log_reminders"] });
       setSendingReminder(null);
@@ -168,9 +170,16 @@ export default function Reminders() {
         <div>
           <h1 className="text-3xl font-bold">Relances</h1>
           <p className="text-muted-foreground">
-            Gérez les relances pour vos devis et factures
+            GÃ©rez les relances pour vos devis et factures
           </p>
         </div>
+        <Button
+          variant="outline"
+          onClick={() => navigate("/reminders/schedules")}
+        >
+          <Settings className="h-4 w-4 mr-2" />
+          RÃ¨gles automatiques
+        </Button>
       </div>
 
       {/* Stats */}
@@ -178,35 +187,35 @@ export default function Reminders() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Devis à relancer
+              Devis ï¿½ relancer
             </CardTitle>
             <AlertCircle className="h-4 w-4 text-orange-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.quotesNeedingReminder}</div>
             <p className="text-xs text-muted-foreground">
-              Après {orgSettings?.quote_followup_days || 7} jours sans réponse
+              Aprï¿½s {orgSettings?.quote_followup_days || 7} jours sans rï¿½ponse
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Factures à relancer
+              Factures ï¿½ relancer
             </CardTitle>
             <AlertCircle className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.invoicesNeedingReminder}</div>
             <p className="text-xs text-muted-foreground">
-              Échues ou en retard
+              ï¿½chues ou en retard
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Relances envoyées
+              Relances envoyï¿½es
             </CardTitle>
             <CheckCircle className="h-4 w-4 text-green-500" />
           </CardHeader>
@@ -235,10 +244,10 @@ export default function Reminders() {
         <TabsContent value="quotes" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Devis nécessitant une relance</CardTitle>
+              <CardTitle>Devis nï¿½cessitant une relance</CardTitle>
               <CardDescription>
-                Devis envoyés il y a plus de {orgSettings?.quote_followup_days || 7}{" "}
-                jours sans réponse
+                Devis envoyï¿½s il y a plus de {orgSettings?.quote_followup_days || 7}{" "}
+                jours sans rï¿½ponse
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -246,11 +255,11 @@ export default function Reminders() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Numéro</TableHead>
+                      <TableHead>Numï¿½ro</TableHead>
                       <TableHead>Client</TableHead>
                       <TableHead>Montant</TableHead>
-                      <TableHead>Envoyé le</TableHead>
-                      <TableHead>Jours écoulés</TableHead>
+                      <TableHead>Envoyï¿½ le</TableHead>
+                      <TableHead>Jours ï¿½coulï¿½s</TableHead>
                       <TableHead className="text-right">Action</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -272,7 +281,7 @@ export default function Reminders() {
                             </span>
                           </TableCell>
                           <TableCell>
-                            {quote.totals_ttc?.toFixed(2)} ¬
+                            {quote.totals_ttc?.toFixed(2)} ï¿½
                           </TableCell>
                           <TableCell>
                             {quote.sent_at
@@ -330,7 +339,7 @@ export default function Reminders() {
                 <div className="text-center py-8">
                   <Bell className="mx-auto h-12 w-12 text-muted-foreground" />
                   <p className="mt-4 text-sm text-muted-foreground">
-                    Aucun devis ne nécessite de relance pour le moment
+                    Aucun devis ne nï¿½cessite de relance pour le moment
                   </p>
                 </div>
               )}
@@ -342,9 +351,9 @@ export default function Reminders() {
         <TabsContent value="invoices" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Factures nécessitant une relance</CardTitle>
+              <CardTitle>Factures nï¿½cessitant une relance</CardTitle>
               <CardDescription>
-                Factures échues ou en retard de paiement
+                Factures ï¿½chues ou en retard de paiement
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -352,10 +361,10 @@ export default function Reminders() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Numéro</TableHead>
+                      <TableHead>Numï¿½ro</TableHead>
                       <TableHead>Client</TableHead>
                       <TableHead>Montant</TableHead>
-                      <TableHead>Échéance</TableHead>
+                      <TableHead>ï¿½chï¿½ance</TableHead>
                       <TableHead>Retard</TableHead>
                       <TableHead className="text-right">Action</TableHead>
                     </TableRow>
@@ -383,7 +392,7 @@ export default function Reminders() {
                             </span>
                           </TableCell>
                           <TableCell>
-                            {invoice.totals_ttc?.toFixed(2)} ¬
+                            {invoice.totals_ttc?.toFixed(2)} ï¿½
                           </TableCell>
                           <TableCell>
                             {invoice.due_date
@@ -438,7 +447,7 @@ export default function Reminders() {
                 <div className="text-center py-8">
                   <CheckCircle className="mx-auto h-12 w-12 text-green-500" />
                   <p className="mt-4 text-sm text-muted-foreground">
-                    Toutes les factures sont à jour !
+                    Toutes les factures sont ï¿½ jour !
                   </p>
                 </div>
               )}
@@ -452,7 +461,7 @@ export default function Reminders() {
             <CardHeader>
               <CardTitle>Historique des relances</CardTitle>
               <CardDescription>
-                Les 50 dernières relances envoyées
+                Les 50 derniï¿½res relances envoyï¿½es
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -509,7 +518,7 @@ export default function Reminders() {
                 <div className="text-center py-8">
                   <Mail className="mx-auto h-12 w-12 text-muted-foreground" />
                   <p className="mt-4 text-sm text-muted-foreground">
-                    Aucune relance envoyée pour le moment
+                    Aucune relance envoyï¿½e pour le moment
                   </p>
                 </div>
               )}
