@@ -1,10 +1,11 @@
-import { 
-  LayoutDashboard, 
-  Users, 
-  Package, 
-  FileText, 
-  Receipt, 
+import {
+  LayoutDashboard,
+  Users,
+  Package,
+  FileText,
+  Receipt,
   Calendar,
+  Bell,
   Settings
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
@@ -28,6 +29,7 @@ const menuItems = [
   { title: "Devis", url: "/quotes", icon: FileText },
   { title: "Factures", url: "/invoices", icon: Receipt },
   { title: "Agenda", url: "/agenda", icon: Calendar },
+  { title: "Relances", url: "/reminders", icon: Bell },
   { title: "Paramètres", url: "/settings", icon: Settings },
 ];
 
