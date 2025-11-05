@@ -4,16 +4,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Save, Search, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { searchBySiret, isValidSiret, formatSiret } from "@/services/pappers.service";
 
 export default function ClientForm() {
   const navigate = useNavigate();
   const { id } = useParams();
   const [loading, setLoading] = useState(false);
+  const [searchingPappers, setSearchingPappers] = useState(false);
 
   // Form state
   const [name, setName] = useState("");
@@ -22,6 +24,10 @@ export default function ClientForm() {
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [notes, setNotes] = useState("");
+  const [siret, setSiret] = useState("");
+  const [vatNumber, setVatNumber] = useState("");
+  const [legalForm, setLegalForm] = useState("");
+  const [registrationCity, setRegistrationCity] = useState("");
 
   // Fetch client if editing
   const { data: client } = useQuery({
@@ -62,8 +68,49 @@ export default function ClientForm() {
       setPhone(client.phone || "");
       setAddress(client.address || "");
       setNotes(client.notes || "");
+      setSiret(client.siret || "");
+      setVatNumber(client.vat_number || "");
+      setLegalForm(client.legal_form || "");
+      setRegistrationCity(client.registration_city || "");
     }
   }, [client]);
+
+  const handleSearchBySiret = async () => {
+    if (!siret.trim()) {
+      toast.error("Veuillez saisir un numéro SIRET");
+      return;
+    }
+
+    if (!isValidSiret(siret)) {
+      toast.error("Le SIRET doit contenir 14 chiffres");
+      return;
+    }
+
+    setSearchingPappers(true);
+
+    try {
+      const companyInfo = await searchBySiret(siret);
+
+      // Auto-remplissage des champs
+      setName(companyInfo.name);
+      setAddress(companyInfo.address);
+      setSiret(formatSiret(companyInfo.siret));
+      if (companyInfo.vatNumber) setVatNumber(companyInfo.vatNumber);
+      if (companyInfo.legalForm) setLegalForm(companyInfo.legalForm);
+      if (companyInfo.registrationCity) setRegistrationCity(companyInfo.registrationCity);
+
+      toast.success("Informations récupérées avec succès !");
+    } catch (error) {
+      console.error("Error fetching company data:", error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Erreur lors de la récupération des données"
+      );
+    } finally {
+      setSearchingPappers(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,6 +129,10 @@ export default function ClientForm() {
         phone: phone || null,
         address: address || null,
         notes: notes || null,
+        siret: siret || null,
+        vat_number: vatNumber || null,
+        legal_form: legalForm || null,
+        registration_city: registrationCity || null,
         org_id: orgSettings.org_id,
       };
 
@@ -130,6 +181,47 @@ export default function ClientForm() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* SIRET Search Section */}
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg space-y-3">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="siret" className="text-blue-900 font-medium">
+                  SIRET (auto-complétion)
+                </Label>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={handleSearchBySiret}
+                  disabled={searchingPappers || !siret.trim()}
+                  className="border-blue-300 text-blue-700 hover:bg-blue-100"
+                >
+                  {searchingPappers ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Recherche...
+                    </>
+                  ) : (
+                    <>
+                      <Search className="h-4 w-4 mr-2" />
+                      Rechercher
+                    </>
+                  )}
+                </Button>
+              </div>
+              <Input
+                id="siret"
+                value={siret}
+                onChange={(e) => setSiret(e.target.value)}
+                placeholder="123 456 789 01234 (14 chiffres)"
+                maxLength={17}
+                className="bg-white"
+              />
+              <p className="text-xs text-blue-700">
+                Saisissez un SIRET et cliquez sur "Rechercher" pour remplir automatiquement les informations de l'entreprise
+              </p>
+            </div>
+
+            {/* Basic Information */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Nom de l'entreprise *</Label>
@@ -183,6 +275,37 @@ export default function ClientForm() {
                 rows={3}
                 placeholder="Adresse complète du client..."
               />
+            </div>
+
+            {/* Legal Information */}
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="vat_number">N° TVA</Label>
+                <Input
+                  id="vat_number"
+                  value={vatNumber}
+                  onChange={(e) => setVatNumber(e.target.value)}
+                  placeholder="FR12345678901"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="legal_form">Forme juridique</Label>
+                <Input
+                  id="legal_form"
+                  value={legalForm}
+                  onChange={(e) => setLegalForm(e.target.value)}
+                  placeholder="SARL, SAS, EI..."
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="registration_city">Ville RCS</Label>
+                <Input
+                  id="registration_city"
+                  value={registrationCity}
+                  onChange={(e) => setRegistrationCity(e.target.value)}
+                  placeholder="Paris"
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
