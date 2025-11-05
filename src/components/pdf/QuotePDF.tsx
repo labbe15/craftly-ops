@@ -8,7 +8,6 @@ import {
   Image,
 } from "@react-pdf/renderer";
 import { format } from "date-fns";
-import { fr } from "date-fns/locale";
 
 // Register font (optional - using Helvetica by default)
 Font.register({
@@ -299,17 +298,11 @@ export const QuotePDF = ({ quote, orgSettings }: QuotePDFProps) => {
               <Text style={styles.quoteTitle}>DEVIS</Text>
               <Text style={styles.quoteNumber}>N° {quote.number}</Text>
               <Text style={styles.quoteNumber}>
-                Date :{" "}
-                {format(new Date(quote.created_at), "dd/MM/yyyy", {
-                  locale: fr,
-                })}
+                Date : {format(new Date(quote.created_at), "dd/MM/yyyy")}
               </Text>
               {quote.expires_at && (
                 <Text style={styles.quoteNumber}>
-                  Valable jusqu'au :{" "}
-                  {format(new Date(quote.expires_at), "dd/MM/yyyy", {
-                    locale: fr,
-                  })}
+                  Valable jusqu'au : {format(new Date(quote.expires_at), "dd/MM/yyyy")}
                 </Text>
               )}
             </View>
@@ -404,7 +397,7 @@ export const QuotePDF = ({ quote, orgSettings }: QuotePDFProps) => {
               )}
               {quote.signed_at && (
                 <Text>
-                  Date : {format(new Date(quote.signed_at), "dd/MM/yyyy 'à' HH:mm", { locale: fr })}
+                  Date : {format(new Date(quote.signed_at), "dd/MM/yyyy 'à' HH:mm")}
                 </Text>
               )}
             </View>

@@ -1,7 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
-import { fr } from "date-fns/locale";
 
 interface SignatureDisplayProps {
   signatureUrl: string;
@@ -45,7 +44,7 @@ export function SignatureDisplay({
           )}
           <p>
             <span className="font-medium">Date :</span>{" "}
-            {format(new Date(signedAt), "PPP 'à' p", { locale: fr })}
+            {format(new Date(signedAt), "dd/MM/yyyy 'à' HH:mm")}
           </p>
         </div>
       </CardContent>
