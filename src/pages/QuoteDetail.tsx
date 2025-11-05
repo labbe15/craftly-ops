@@ -13,7 +13,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, Trash2, FileDown, Save } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, FileDown, Save, PenTool } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect, useMemo } from "react";
@@ -24,6 +24,16 @@ import { QuotePDF } from "@/components/pdf/QuotePDF";
 import { PDFPreview } from "@/components/pdf/PDFPreview";
 import { SendEmailDialog } from "@/components/email/SendEmailDialog";
 import { ConvertToInvoiceDialog } from "@/components/quote/ConvertToInvoiceDialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { SignatureCanvas } from "@/components/signatures/SignatureCanvas";
+import { SignatureDisplay } from "@/components/signatures/SignatureDisplay";
+import { uploadSignature, updateQuoteWithSignature } from "@/services/signature.service";
 
 interface QuoteLineItem {
   id: string;
@@ -49,6 +59,8 @@ export default function QuoteDetail() {
   const [termsText, setTermsText] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
   const [lineItems, setLineItems] = useState<QuoteLineItem[]>([]);
+  const [showSignatureDialog, setShowSignatureDialog] = useState(false);
+  const [isSavingSignature, setIsSavingSignature] = useState(false);
 
   // Fetch quote
   const { data: quote, isLoading: isLoadingQuote } = useQuery({
@@ -366,6 +378,36 @@ export default function QuoteDetail() {
     }
   };
 
+  const handleSaveSignature = async (
+    signatureBlob: Blob,
+    signerName: string,
+    signerEmail: string
+  ) => {
+    if (!id) return;
+
+    try {
+      setIsSavingSignature(true);
+
+      // Upload signature to Supabase Storage
+      const { url } = await uploadSignature(id, signatureBlob);
+
+      // Update quote with signature info
+      await updateQuoteWithSignature(id, url, signerName, signerEmail);
+
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ["quote", id] });
+      queryClient.invalidateQueries({ queryKey: ["quotes"] });
+
+      toast.success("Signature enregistrée avec succès");
+      setShowSignatureDialog(false);
+    } catch (error) {
+      console.error("Error saving signature:", error);
+      toast.error("Erreur lors de l'enregistrement de la signature");
+    } finally {
+      setIsSavingSignature(false);
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const variants: Record<
       string,
@@ -375,6 +417,7 @@ export default function QuoteDetail() {
       sent: "secondary",
       accepted: "default",
       refused: "destructive",
+      signed: "default",
     };
     const labels: Record<string, string> = {
       draft: "Brouillon",
@@ -382,6 +425,7 @@ export default function QuoteDetail() {
       accepted: "Accepté",
       refused: "Refusé",
       expired: "Expiré",
+      signed: "Signé",
     };
     return (
       <Badge variant={variants[status] || "outline"}>
@@ -449,6 +493,16 @@ export default function QuoteDetail() {
             quoteNumber={quoteNumber}
             quoteStatus={status}
           />
+          {!quote.signature_url && status !== "refused" && status !== "expired" && (
+            <Button
+              variant="outline"
+              onClick={() => setShowSignatureDialog(true)}
+              className="border-green-600 text-green-600 hover:bg-green-50"
+            >
+              <PenTool className="h-4 w-4 mr-2" />
+              Signer le devis
+            </Button>
+          )}
           <Button onClick={downloadPDF} disabled={downloadingPDF}>
             <FileDown className="h-4 w-4 mr-2" />
             {downloadingPDF ? "Téléchargement..." : "Télécharger PDF"}
@@ -506,6 +560,7 @@ export default function QuoteDetail() {
                     <SelectItem value="accepted">Accepté</SelectItem>
                     <SelectItem value="refused">Refusé</SelectItem>
                     <SelectItem value="expired">Expiré</SelectItem>
+                    <SelectItem value="signed">Signé</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -736,6 +791,16 @@ export default function QuoteDetail() {
           </CardContent>
         </Card>
 
+        {/* Signature Display */}
+        {quote.signature_url && (
+          <SignatureDisplay
+            signatureUrl={quote.signature_url}
+            signedAt={quote.signed_at || new Date().toISOString()}
+            signedByName={quote.signed_by_name}
+            signedByEmail={quote.signed_by_email}
+          />
+        )}
+
         {/* Actions */}
         <div className="flex justify-end gap-3">
           <Button
@@ -751,6 +816,23 @@ export default function QuoteDetail() {
           </Button>
         </div>
       </form>
+
+      {/* Signature Dialog */}
+      <Dialog open={showSignatureDialog} onOpenChange={setShowSignatureDialog}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Signer le devis {quoteNumber}</DialogTitle>
+            <DialogDescription>
+              Dessinez votre signature ci-dessous ou importez une image de signature.
+            </DialogDescription>
+          </DialogHeader>
+          <SignatureCanvas
+            onSave={handleSaveSignature}
+            onCancel={() => setShowSignatureDialog(false)}
+            isSaving={isSavingSignature}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

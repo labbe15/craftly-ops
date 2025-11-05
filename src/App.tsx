@@ -25,6 +25,7 @@ import EventForm from "./pages/EventForm";
 import Reminders from "./pages/Reminders";
 import ReminderSchedules from "./pages/ReminderSchedules";
 import Settings from "./pages/Settings";
+import Exports from "./pages/Exports";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -87,6 +88,7 @@ const App = () => {
                 <Route path="/agenda/:id" element={<EventForm />} />
                 <Route path="/reminders" element={<Reminders />} />
                 <Route path="/reminders/schedules" element={<ReminderSchedules />} />
+                <Route path="/exports" element={<Exports />} />
                 <Route path="/settings" element={<Settings />} />
               </Route>
             ) : (

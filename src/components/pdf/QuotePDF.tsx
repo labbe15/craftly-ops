@@ -5,6 +5,7 @@ import {
   View,
   StyleSheet,
   Font,
+  Image,
 } from "@react-pdf/renderer";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -32,6 +33,10 @@ interface QuoteData {
   totals_ht: number;
   totals_vat: number;
   totals_ttc: number;
+  signature_url?: string;
+  signed_at?: string;
+  signed_by_name?: string;
+  signed_by_email?: string;
   client: {
     name: string;
     contact_name?: string;
@@ -228,6 +233,30 @@ const createStyles = (brandPrimary?: string) =>
       lineHeight: 1.6,
       color: "#666666",
     },
+    signatureSection: {
+      marginTop: 30,
+      padding: 15,
+      backgroundColor: "#f0fdf4",
+      borderRadius: 4,
+      borderLeft: `4pt solid ${brandPrimary || "#3b82f6"}`,
+    },
+    signatureTitle: {
+      fontSize: 11,
+      fontWeight: "bold",
+      marginBottom: 12,
+      color: "#166534",
+    },
+    signatureImage: {
+      width: 150,
+      height: 60,
+      marginBottom: 8,
+      objectFit: "contain",
+    },
+    signatureInfo: {
+      fontSize: 8,
+      color: "#666666",
+      lineHeight: 1.5,
+    },
     footer: {
       position: "absolute",
       bottom: 30,
@@ -358,6 +387,27 @@ export const QuotePDF = ({ quote, orgSettings }: QuotePDFProps) => {
           <View style={styles.termsSection}>
             <Text style={styles.termsTitle}>Conditions</Text>
             <Text style={styles.termsText}>{quote.terms_text}</Text>
+          </View>
+        )}
+
+        {/* Signature */}
+        {quote.signature_url && (
+          <View style={styles.signatureSection}>
+            <Text style={styles.signatureTitle}>✓ Devis signé électroniquement</Text>
+            <Image src={quote.signature_url} style={styles.signatureImage} />
+            <View style={styles.signatureInfo}>
+              {quote.signed_by_name && (
+                <Text>Signé par : {quote.signed_by_name}</Text>
+              )}
+              {quote.signed_by_email && (
+                <Text>Email : {quote.signed_by_email}</Text>
+              )}
+              {quote.signed_at && (
+                <Text>
+                  Date : {format(new Date(quote.signed_at), "dd/MM/yyyy 'à' HH:mm", { locale: fr })}
+                </Text>
+              )}
+            </View>
           </View>
         )}
 
