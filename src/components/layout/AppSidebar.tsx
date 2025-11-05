@@ -6,6 +6,7 @@ import {
   Receipt,
   Calendar,
   Bell,
+  FileDown,
   Settings
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
@@ -30,6 +31,7 @@ const menuItems = [
   { title: "Factures", url: "/invoices", icon: Receipt },
   { title: "Agenda", url: "/agenda", icon: Calendar },
   { title: "Relances", url: "/reminders", icon: Bell },
+  { title: "Exports", url: "/exports", icon: FileDown },
   { title: "Paramètres", url: "/settings", icon: Settings },
 ];
 
