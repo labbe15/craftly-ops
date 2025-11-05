@@ -2,27 +2,45 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
+const DEMO_MODE = import.meta.env.VITE_DEMO_MODE === 'true';
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-// Validate environment variables
-if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
-  console.error('Missing Supabase environment variables:', {
-    SUPABASE_URL: !!SUPABASE_URL,
-    SUPABASE_PUBLISHABLE_KEY: !!SUPABASE_PUBLISHABLE_KEY
+// En mode démo, créer un client factice pour éviter les erreurs
+let supabaseClient;
+
+if (DEMO_MODE) {
+  console.log('🧪 Mode DÉMO activé - Client Supabase factice');
+  // Client factice qui ne fait rien
+  supabaseClient = createClient('https://demo.supabase.co', 'demo-key-not-real', {
+    auth: {
+      storage: localStorage,
+      persistSession: false,
+      autoRefreshToken: false,
+    }
   });
-  throw new Error(
-    'Missing Supabase environment variables. Please check your .env file and ensure VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY are set.'
-  );
+} else {
+  // Mode normal - valider les variables d'environnement
+  if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
+    console.error('Missing Supabase environment variables:', {
+      SUPABASE_URL: !!SUPABASE_URL,
+      SUPABASE_PUBLISHABLE_KEY: !!SUPABASE_PUBLISHABLE_KEY
+    });
+    throw new Error(
+      'Missing Supabase environment variables. Please check your .env file and ensure VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY are set.'
+    );
+  }
+
+  supabaseClient = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+    auth: {
+      storage: localStorage,
+      persistSession: true,
+      autoRefreshToken: true,
+    }
+  });
 }
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-  auth: {
-    storage: localStorage,
-    persistSession: true,
-    autoRefreshToken: true,
-  }
-});
+export const supabase = supabaseClient;
