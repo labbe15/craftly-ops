@@ -2,15 +2,19 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const DEMO_MODE = import.meta.env.VITE_DEMO_MODE === 'true';
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+// Mode démo automatique si Supabase n'est pas configuré
+const DEMO_MODE = !SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_DEMO_MODE === 'true';
 
 // En mode démo, créer un client factice pour éviter les erreurs
 let supabaseClient;
 
 if (DEMO_MODE) {
-  console.log('🧪 Mode DÉMO activé - Client Supabase factice');
+  console.log('🧪 MODE DÉMO ACTIVÉ - Supabase désactivé');
+  console.log('📌 Pour activer Supabase : configurez VITE_SUPABASE_URL et VITE_SUPABASE_PUBLISHABLE_KEY');
+
   // Client factice qui ne fait rien
   supabaseClient = createClient('https://demo.supabase.co', 'demo-key-not-real', {
     auth: {
@@ -20,16 +24,7 @@ if (DEMO_MODE) {
     }
   });
 } else {
-  // Mode normal - valider les variables d'environnement
-  if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
-    console.error('Missing Supabase environment variables:', {
-      SUPABASE_URL: !!SUPABASE_URL,
-      SUPABASE_PUBLISHABLE_KEY: !!SUPABASE_PUBLISHABLE_KEY
-    });
-    throw new Error(
-      'Missing Supabase environment variables. Please check your .env file and ensure VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY are set.'
-    );
-  }
+  console.log('✅ Supabase connecté');
 
   supabaseClient = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
     auth: {

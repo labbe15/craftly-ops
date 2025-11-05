@@ -30,8 +30,10 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-// Mode démo : bypass Supabase pour les tests
-const DEMO_MODE = import.meta.env.VITE_DEMO_MODE === 'true';
+// Mode démo automatique si Supabase n'est pas configuré
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const DEMO_MODE = !SUPABASE_URL || !SUPABASE_KEY || import.meta.env.VITE_DEMO_MODE === 'true';
 
 const App = () => {
   const [session, setSession] = useState<Session | null>(null);
