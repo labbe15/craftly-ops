@@ -30,12 +30,25 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+// Mode démo : bypass Supabase pour les tests
+const DEMO_MODE = import.meta.env.VITE_DEMO_MODE === 'true';
+
 const App = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Setup auth state listener
+    // En mode démo, créer une fausse session immédiatement
+    if (DEMO_MODE) {
+      const fakeSession = {
+        user: { id: 'demo-user', email: 'demo@craftly.fr' }
+      } as Session;
+      setSession(fakeSession);
+      setLoading(false);
+      return;
+    }
+
+    // Mode normal avec Supabase
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setLoading(false);
@@ -64,6 +77,12 @@ const App = () => {
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          {DEMO_MODE && (
+            <div className="fixed top-0 left-0 right-0 bg-yellow-500 text-black text-center py-2 z-50 text-sm font-medium">
+              🧪 MODE DÉMO - Supabase désactivé - Données de test uniquement
+            </div>
+          )}
+          <div className={DEMO_MODE ? "pt-10" : ""}>
           <Routes>
             <Route path="/auth" element={!session ? <Auth /> : <Navigate to="/" />} />
             
@@ -97,6 +116,7 @@ const App = () => {
 
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </div>
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
