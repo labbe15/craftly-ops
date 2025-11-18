@@ -6,13 +6,32 @@ import {
   FileCheck,
   CreditCard,
   TrendingUp,
+  TrendingDown,
   Users,
   AlertCircle,
   Euro,
   Clock,
+  FolderKanban,
 } from "lucide-react";
-import { format, startOfMonth, endOfMonth, subMonths, isAfter } from "date-fns";
+import { format, startOfMonth, endOfMonth, subMonths, isAfter, subDays, eachDayOfInterval } from "date-fns";
 import { fr } from "date-fns/locale";
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
+
+const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"];
 
 export default function Dashboard() {
   // Fetch all data
@@ -28,7 +47,7 @@ export default function Dashboard() {
   const { data: invoices } = useQuery({
     queryKey: ["invoices"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("invoices").select("*");
+      const { data, error} = await supabase.from("invoices").select("*");
       if (error) throw error;
       return data;
     },
@@ -52,6 +71,15 @@ export default function Dashboard() {
     },
   });
 
+  const { data: projects } = useQuery({
+    queryKey: ["projects-dashboard"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("projects").select("id, status");
+      if (error) throw error;
+      return data;
+    },
+  });
+
   // Calculate statistics
   const now = new Date();
   const currentMonthStart = startOfMonth(now);
@@ -63,10 +91,8 @@ export default function Dashboard() {
   const totalQuotes = quotes?.length || 0;
   const acceptedQuotes = quotes?.filter((q) => q.status === "accepted").length || 0;
   const pendingQuotes = quotes?.filter((q) => q.status === "sent").length || 0;
-  const currentMonthQuotes = quotes?.filter((q) => {
-    const date = new Date(q.created_at);
-    return date >= currentMonthStart && date <= currentMonthEnd;
-  }).length || 0;
+  const refusedQuotes = quotes?.filter((q) => q.status === "refused").length || 0;
+  const draftQuotes = quotes?.filter((q) => q.status === "draft").length || 0;
 
   // Invoices statistics
   const totalInvoices = invoices?.length || 0;
@@ -75,6 +101,10 @@ export default function Dashboard() {
     if (i.status === "paid" || !i.due_date) return false;
     return isAfter(now, new Date(i.due_date));
   }).length || 0;
+
+  // Projects statistics
+  const totalProjects = projects?.length || 0;
+  const activeProjects = projects?.filter((p) => p.status === "in_progress").length || 0;
 
   // Revenue statistics
   const totalRevenue = invoices?.reduce((sum, i) => sum + (i.totals_ttc || 0), 0) || 0;
@@ -101,15 +131,46 @@ export default function Dashboard() {
     ? ((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100
     : 0;
 
-  // Payment statistics
-  const currentMonthPayments = payments
-    ?.filter((p) => {
-      const date = new Date(p.paid_at);
-      return date >= currentMonthStart && date <= currentMonthEnd;
-    })
-    .reduce((sum, p) => sum + p.amount, 0) || 0;
-
   const totalClients = clients?.length || 0;
+
+  // Prepare chart data - Revenue over last 30 days
+  const last30Days = eachDayOfInterval({
+    start: subDays(now, 29),
+    end: now,
+  });
+
+  const revenueChartData = last30Days.map((day) => {
+    const dayRevenue = invoices
+      ?.filter((i) => {
+        const invoiceDate = new Date(i.created_at);
+        return (
+          invoiceDate.getDate() === day.getDate() &&
+          invoiceDate.getMonth() === day.getMonth() &&
+          invoiceDate.getFullYear() === day.getFullYear()
+        );
+      })
+      .reduce((sum, i) => sum + (i.totals_ttc || 0), 0) || 0;
+
+    return {
+      date: format(day, "dd/MM", { locale: fr }),
+      revenue: dayRevenue,
+    };
+  });
+
+  // Quotes status pie chart
+  const quotesStatusData = [
+    { name: "Acceptés", value: acceptedQuotes, color: COLORS[1] },
+    { name: "En attente", value: pendingQuotes, color: COLORS[2] },
+    { name: "Refusés", value: refusedQuotes, color: COLORS[3] },
+    { name: "Brouillons", value: draftQuotes, color: COLORS[0] },
+  ].filter((item) => item.value > 0);
+
+  // Invoices status bar chart
+  const invoicesStatusData = [
+    { name: "Payées", value: paidInvoices },
+    { name: "En retard", value: overdueInvoices },
+    { name: "En attente", value: totalInvoices - paidInvoices - overdueInvoices },
+  ];
 
   const StatCard = ({
     title,
@@ -138,11 +199,11 @@ export default function Dashboard() {
         )}
         {trendValue && (
           <div className="flex items-center gap-1 mt-2">
-            <TrendingUp
-              className={`h-3 w-3 ${
-                trend === "up" ? "text-green-500" : "text-red-500"
-              }`}
-            />
+            {trend === "up" ? (
+              <TrendingUp className="h-3 w-3 text-green-500" />
+            ) : (
+              <TrendingDown className="h-3 w-3 text-red-500" />
+            )}
             <span
               className={`text-xs ${
                 trend === "up" ? "text-green-500" : "text-red-500"
@@ -204,10 +265,10 @@ export default function Dashboard() {
           description={`${acceptedQuotes} acceptés, ${pendingQuotes} en attente`}
         />
         <StatCard
-          title="Devis ce mois"
-          value={currentMonthQuotes}
-          icon={Clock}
-          description="Nouveaux devis créés"
+          title="Projets"
+          value={totalProjects}
+          icon={FolderKanban}
+          description={`${activeProjects} en cours`}
         />
         <StatCard
           title="À encaisser"
@@ -216,12 +277,92 @@ export default function Dashboard() {
           description="Factures en attente"
         />
         <StatCard
-          title="Paiements ce mois"
-          value={`${currentMonthPayments.toFixed(0)} €`}
-          icon={CreditCard}
-          description="Montant encaissé"
+          title="Taux conversion"
+          value={totalQuotes > 0 ? `${((acceptedQuotes / totalQuotes) * 100).toFixed(0)}%` : "0%"}
+          icon={TrendingUp}
+          description="Devis acceptés"
         />
       </div>
+
+      {/* Charts */}
+      <div className="grid gap-4 md:grid-cols-2">
+        {/* Revenue Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Évolution du CA (30 derniers jours)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={revenueChartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 12 }}
+                  interval="preserveStartEnd"
+                />
+                <YAxis tick={{ fontSize: 12 }} />
+                <Tooltip
+                  formatter={(value: number) => `${value.toFixed(2)} €`}
+                  labelStyle={{ color: '#000' }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="revenue"
+                  stroke="#3b82f6"
+                  strokeWidth={2}
+                  name="CA"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Quotes Status Pie Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Répartition des devis</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={quotesStatusData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {quotesStatusData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Invoices Bar Chart */}
+      <Card>
+        <CardHeader>
+          <CardTitle>État des factures</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={250}>
+            <BarChart data={invoicesStatusData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip />
+              <Bar dataKey="value" fill="#3b82f6" name="Nombre" />
+            </BarChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
 
       {/* Recent activity cards */}
       <div className="grid gap-4 md:grid-cols-2">
