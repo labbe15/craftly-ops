@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import Clients from "./pages/Clients";
 import ClientForm from "./pages/ClientForm";
 import ClientDetail from "./pages/ClientDetail";
+import Projects from "./pages/Projects";
 import Items from "./pages/Items";
 import ItemForm from "./pages/ItemForm";
 import Quotes from "./pages/Quotes";
@@ -74,6 +75,7 @@ const App = () => {
                 <Route path="/clients/new" element={<ClientForm />} />
                 <Route path="/clients/:id" element={<ClientDetail />} />
                 <Route path="/clients/:id/edit" element={<ClientForm />} />
+                <Route path="/projects" element={<Projects />} />
                 <Route path="/items" element={<Items />} />
                 <Route path="/items/new" element={<ItemForm />} />
                 <Route path="/items/:id" element={<ItemForm />} />

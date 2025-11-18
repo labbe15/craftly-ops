@@ -1,6 +1,7 @@
 import {
   LayoutDashboard,
   Users,
+  FolderKanban,
   Package,
   FileText,
   Receipt,
@@ -26,6 +27,7 @@ import { cn } from "@/lib/utils";
 const menuItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Clients", url: "/clients", icon: Users },
+  { title: "Projets", url: "/projects", icon: FolderKanban },
   { title: "Articles", url: "/items", icon: Package },
   { title: "Devis", url: "/quotes", icon: FileText },
   { title: "Factures", url: "/invoices", icon: Receipt },
