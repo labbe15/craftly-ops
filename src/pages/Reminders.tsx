@@ -14,15 +14,17 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Bell, Mail, Clock, AlertCircle, Send, CheckCircle, Settings } from "lucide-react";
+import { Bell, Mail, Clock, AlertCircle, Send, CheckCircle, Settings, Play, Loader2 } from "lucide-react";
 import { format, differenceInDays, addDays } from "date-fns";
 import { fr } from "date-fns/locale";
 import { toast } from "sonner";
+import { reminderService } from "@/services/reminder.service";
 
 export default function Reminders() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [sendingReminder, setSendingReminder] = useState<string | null>(null);
+  const [processingAll, setProcessingAll] = useState(false);
 
   // Fetch org settings to get reminder thresholds
   const { data: orgSettings } = useQuery({
@@ -132,6 +134,44 @@ export default function Reminders() {
     },
   });
 
+  // Process all reminders at once
+  const handleProcessAllReminders = async () => {
+    if (!orgSettings) {
+      toast.error("Paramètres non chargés");
+      return;
+    }
+
+    setProcessingAll(true);
+
+    try {
+      const results = await reminderService.processAllReminders(orgSettings);
+
+      queryClient.invalidateQueries({ queryKey: ["quotes-pending"] });
+      queryClient.invalidateQueries({ queryKey: ["invoices-overdue"] });
+      queryClient.invalidateQueries({ queryKey: ["mail_log_reminders"] });
+
+      const totalSent = results.quotesFollowedUp + results.invoicesReminded + results.invoicesOverdue;
+
+      if (totalSent > 0) {
+        toast.success(
+          `${totalSent} relance(s) envoyée(s) : ${results.quotesFollowedUp} devis, ${results.invoicesReminded + results.invoicesOverdue} facture(s)`
+        );
+      } else {
+        toast.info("Aucune relance à envoyer pour le moment");
+      }
+
+      if (results.errors.length > 0) {
+        console.error("Reminder errors:", results.errors);
+        toast.warning(`${results.errors.length} erreur(s) rencontrée(s)`);
+      }
+    } catch (error) {
+      console.error("Error processing reminders:", error);
+      toast.error("Erreur lors du traitement des relances");
+    } finally {
+      setProcessingAll(false);
+    }
+  };
+
   // Calculate quotes that need reminders
   const quotesNeedingReminder = quotes?.filter((quote) => {
     if (!quote.sent_at || !orgSettings?.quote_followup_days) return false;
@@ -173,13 +213,31 @@ export default function Reminders() {
             Gérez les relances pour vos devis et factures
           </p>
         </div>
-        <Button
-          variant="outline"
-          onClick={() => navigate("/reminders/schedules")}
-        >
-          <Settings className="h-4 w-4 mr-2" />
-          Règles automatiques
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={handleProcessAllReminders}
+            disabled={processingAll || (stats.quotesNeedingReminder === 0 && stats.invoicesNeedingReminder === 0)}
+          >
+            {processingAll ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Traitement...
+              </>
+            ) : (
+              <>
+                <Play className="h-4 w-4 mr-2" />
+                Traiter toutes les relances
+              </>
+            )}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => navigate("/reminders/schedules")}
+          >
+            <Settings className="h-4 w-4 mr-2" />
+            Règles automatiques
+          </Button>
+        </div>
       </div>
 
       {/* Stats */}
