@@ -190,6 +190,161 @@ Format: 2-3 phrases décrivant le projet de manière professionnelle.`;
     const lines = response.message.split("\n").filter((line) => line.trim());
     return lines.slice(0, type === "materials" ? 5 : 3);
   }
+
+  // ============ ADVANCED AI - VISION & OCR ============
+
+  // Analyze construction site photo
+  async analyzeConstructionPhoto(imageBase64: string, analysisType: "progress" | "defects" | "materials" | "safety"): Promise<any> {
+    if (!this.apiKey) {
+      throw new Error("OpenAI API key not configured");
+    }
+
+    const prompts = {
+      progress: "Analyse cette photo de chantier et estime le pourcentage d'avancement des travaux. Décris les travaux réalisés et ceux restant à faire.",
+      defects: "Identifie tous les défauts, malfaçons ou problèmes visibles sur cette photo de chantier. Sois précis et technique.",
+      materials: "Liste tous les matériaux visibles sur cette photo de chantier avec leurs quantités estimées.",
+      safety: "Analyse cette photo de chantier du point de vue de la sécurité. Identifie les risques, équipements manquants ou non-conformités.",
+    };
+
+    try {
+      const response = await fetch(`${this.baseURL}/chat/completions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${this.apiKey}`,
+        },
+        body: JSON.stringify({
+          model: "gpt-4-vision-preview",
+          messages: [
+            {
+              role: "user",
+              content: [
+                {
+                  type: "text",
+                  text: prompts[analysisType],
+                },
+                {
+                  type: "image_url",
+                  image_url: {
+                    url: `data:image/jpeg;base64,${imageBase64}`,
+                  },
+                },
+              ],
+            },
+          ],
+          max_tokens: 500,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error?.message || "Vision API request failed");
+      }
+
+      const data = await response.json();
+
+      return {
+        analysis: data.choices[0].message.content,
+        type: analysisType,
+        tokens: data.usage?.total_tokens || 0,
+      };
+    } catch (error) {
+      console.error("Vision API error:", error);
+      throw error;
+    }
+  }
+
+  // OCR and extract data from invoice/receipt image
+  async extractDataFromDocument(imageBase64: string, documentType: "invoice" | "receipt" | "estimate"): Promise<any> {
+    if (!this.apiKey) {
+      throw new Error("OpenAI API key not configured");
+    }
+
+    const prompts = {
+      invoice: `Analyse cette image de facture et extrais les informations au format JSON:
+{
+  "supplier": "Nom du fournisseur",
+  "invoice_number": "Numéro de facture",
+  "date": "Date (YYYY-MM-DD)",
+  "amount_ht": montant HT en nombre,
+  "amount_vat": montant TVA en nombre,
+  "amount_ttc": montant TTC en nombre,
+  "items": [{"description": "Description", "quantity": nombre, "price": nombre}]
+}`,
+      receipt: `Analyse cette image de reçu et extrais au format JSON:
+{
+  "merchant": "Nom commerçant",
+  "date": "Date (YYYY-MM-DD)",
+  "amount": montant total,
+  "category": "catégorie dépense",
+  "items": [{"description": "Description", "price": nombre}]
+}`,
+      estimate: `Analyse ce devis et extrais au format JSON:
+{
+  "supplier": "Fournisseur",
+  "estimate_number": "Numéro",
+  "date": "Date (YYYY-MM-DD)",
+  "amount_ht": montant HT,
+  "amount_ttc": montant TTC
+}`,
+    };
+
+    try {
+      const response = await fetch(`${this.baseURL}/chat/completions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${this.apiKey}`,
+        },
+        body: JSON.stringify({
+          model: "gpt-4-vision-preview",
+          messages: [
+            {
+              role: "user",
+              content: [
+                { type: "text", text: prompts[documentType] },
+                {
+                  type: "image_url",
+                  image_url: { url: `data:image/jpeg;base64,${imageBase64}` },
+                },
+              ],
+            },
+          ],
+          max_tokens: 1000,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error?.message || "OCR API request failed");
+      }
+
+      const data = await response.json();
+      const content = data.choices[0].message.content;
+
+      try {
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          return {
+            data: JSON.parse(jsonMatch[0]),
+            raw: content,
+            tokens: data.usage?.total_tokens || 0,
+          };
+        }
+      } catch (parseError) {
+        console.warn("Failed to parse JSON from OCR response");
+      }
+
+      return {
+        data: null,
+        raw: content,
+        tokens: data.usage?.total_tokens || 0,
+      };
+    } catch (error) {
+      console.error("OCR API error:", error);
+      throw error;
+    }
+  }
 }
 
 export const openaiService = new OpenAIService();
