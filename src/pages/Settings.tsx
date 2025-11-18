@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { Loader2, Upload, Image as ImageIcon, X } from "lucide-react";
+import { TemplateSelector } from "@/components/pdf/TemplateSelector";
 
 interface OrgSettings {
   id?: string;
@@ -30,6 +31,8 @@ interface OrgSettings {
   payment_terms_days?: number;
   quote_followup_days?: number;
   invoice_overdue_days?: number;
+  default_quote_template?: string;
+  default_invoice_template?: string;
 }
 
 export default function Settings() {
@@ -55,6 +58,8 @@ export default function Settings() {
     payment_terms_days: 30,
     quote_followup_days: 7,
     invoice_overdue_days: 15,
+    default_quote_template: "quote-modern",
+    default_invoice_template: "invoice-modern",
   });
 
   // Fetch org settings
@@ -499,6 +504,23 @@ export default function Settings() {
             </div>
           </CardContent>
         </Card>
+
+        {/* PDF Templates */}
+        <div className="space-y-4">
+          <h2 className="text-2xl font-semibold">Templates PDF</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <TemplateSelector
+              type="quote"
+              selectedTemplateId={formData.default_quote_template}
+              onSelect={(templateId) => handleChange("default_quote_template", templateId)}
+            />
+            <TemplateSelector
+              type="invoice"
+              selectedTemplateId={formData.default_invoice_template}
+              onSelect={(templateId) => handleChange("default_invoice_template", templateId)}
+            />
+          </div>
+        </div>
 
         <div className="flex justify-end">
           <Button
