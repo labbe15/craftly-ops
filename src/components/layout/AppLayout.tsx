@@ -3,6 +3,7 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { TopBar } from "./TopBar";
 import { GlobalSearch } from "@/components/search/GlobalSearch";
+import { ChatBot } from "@/components/chat/ChatBot";
 
 export function AppLayout() {
   return (
@@ -17,6 +18,7 @@ export function AppLayout() {
         </div>
       </div>
       <GlobalSearch />
+      <ChatBot />
     </SidebarProvider>
   );
 }
