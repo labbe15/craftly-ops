@@ -19,9 +19,17 @@ self.addEventListener('install', (event) => {
     caches.open(CACHE_NAME)
       .then((cache) => {
         console.log('[SW] Precaching app shell');
-        return cache.addAll(PRECACHE_ASSETS);
+        // Try to cache but don't fail if it doesn't work
+        return cache.addAll(PRECACHE_ASSETS).catch((err) => {
+          console.warn('[SW] Precache failed, but continuing anyway:', err);
+          return Promise.resolve();
+        });
       })
       .then(() => self.skipWaiting())
+      .catch((err) => {
+        console.error('[SW] Install failed:', err);
+        return self.skipWaiting(); // Skip waiting even if cache fails
+      })
   );
 });
 
