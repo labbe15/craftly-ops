@@ -29,6 +29,7 @@ import Reminders from "./pages/Reminders";
 import ReminderSchedules from "./pages/ReminderSchedules";
 import Workflows from "./pages/Workflows";
 import Analytics from "./pages/Analytics";
+import Team from "./pages/Team";
 import Settings from "./pages/Settings";
 import Exports from "./pages/Exports";
 import NotFound from "./pages/NotFound";
@@ -99,6 +100,7 @@ const App = () => {
                 <Route path="/reminders/schedules" element={<ReminderSchedules />} />
                 <Route path="/workflows" element={<Workflows />} />
                 <Route path="/analytics" element={<Analytics />} />
+                <Route path="/team" element={<Team />} />
                 <Route path="/exports" element={<Exports />} />
                 <Route path="/settings" element={<Settings />} />
               </Route>

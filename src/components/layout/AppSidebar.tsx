@@ -9,6 +9,7 @@ import {
   Bell,
   Zap,
   BarChart3,
+  Users2,
   FileDown,
   Settings
 } from "lucide-react";
@@ -37,6 +38,7 @@ const menuItems = [
   { title: "Relances", url: "/reminders", icon: Bell },
   { title: "Workflows", url: "/workflows", icon: Zap },
   { title: "Analytics", url: "/analytics", icon: BarChart3 },
+  { title: "Équipe", url: "/team", icon: Users2 },
   { title: "Exports", url: "/exports", icon: FileDown },
   { title: "Paramètres", url: "/settings", icon: Settings },
 ];
