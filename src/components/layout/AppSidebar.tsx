@@ -7,6 +7,7 @@ import {
   Receipt,
   Calendar,
   Bell,
+  Zap,
   FileDown,
   Settings
 } from "lucide-react";
@@ -33,6 +34,7 @@ const menuItems = [
   { title: "Factures", url: "/invoices", icon: Receipt },
   { title: "Agenda", url: "/agenda", icon: Calendar },
   { title: "Relances", url: "/reminders", icon: Bell },
+  { title: "Workflows", url: "/workflows", icon: Zap },
   { title: "Exports", url: "/exports", icon: FileDown },
   { title: "Paramètres", url: "/settings", icon: Settings },
 ];
