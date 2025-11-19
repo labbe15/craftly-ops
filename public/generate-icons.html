@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Générateur d'icônes PWA - Craftly Ops</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #3b82f6;
+      margin-bottom: 10px;
+    }
+    .subtitle {
+      color: #666;
+      margin-bottom: 30px;
+    }
+    button {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 10px 10px 10px 0;
+    }
+    button:hover {
+      background: #2563eb;
+    }
+    .preview {
+      margin: 20px 0;
+      padding: 20px;
+      background: #f9fafb;
+      border-radius: 8px;
+    }
+    .preview img {
+      margin: 10px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+    .instructions {
+      background: #eff6ff;
+      border-left: 4px solid #3b82f6;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 4px;
+    }
+    .success {
+      background: #d1fae5;
+      border-left: 4px solid #10b981;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 4px;
+      display: none;
+    }
+    .success.show {
+      display: block;
+    }
+    code {
+      background: #f3f4f6;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: 'Courier New', monospace;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🛠️ Générateur d'icônes PWA</h1>
+    <p class="subtitle">Générez automatiquement les icônes PNG pour votre application Craftly Ops</p>
+
+    <div class="instructions">
+      <h3>📋 Instructions</h3>
+      <ol>
+        <li>Cliquez sur "Générer les icônes" ci-dessous</li>
+        <li>Les icônes seront générées et téléchargées automatiquement</li>
+        <li>Placez les fichiers <code>icon-192.png</code> et <code>icon-512.png</code> dans le dossier <code>public/</code></li>
+      </ol>
+    </div>
+
+    <button onclick="generateIcons()">🚀 Générer les icônes</button>
+
+    <div class="success" id="success">
+      ✅ Icônes générées avec succès ! Les téléchargements devraient démarrer automatiquement.
+    </div>
+
+    <div class="preview" id="preview" style="display: none;">
+      <h3>Aperçu des icônes générées</h3>
+      <div id="previewImages"></div>
+    </div>
+  </div>
+
+  <canvas id="canvas" style="display: none;"></canvas>
+
+  <script>
+    const svgContent = `<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="512" height="512" rx="128" fill="#3b82f6"/>
+
+  <!-- Tool icon - hammer and wrench -->
+  <g transform="translate(128, 128)">
+    <!-- Hammer -->
+    <path d="M140 60 L180 100 L120 160 L80 120 Z" fill="white" opacity="0.9"/>
+    <rect x="70" y="150" width="20" height="80" rx="5" fill="white" opacity="0.9" transform="rotate(-45 80 150)"/>
+
+    <!-- Wrench -->
+    <path d="M220 140 Q240 120 240 100 Q240 60 200 60 Q180 60 170 80 L190 100 L160 130 L200 170 L230 140 L210 120 Q230 100 220 140" fill="white" opacity="0.9"/>
+  </g>
+
+  <!-- Letter C -->
+  <text x="256" y="360" font-family="Arial, sans-serif" font-size="180" font-weight="bold" fill="white" text-anchor="middle">C</text>
+</svg>`;
+
+    function generateIcons() {
+      const sizes = [
+        { size: 192, filename: 'icon-192.png' },
+        { size: 512, filename: 'icon-512.png' }
+      ];
+
+      const previewDiv = document.getElementById('previewImages');
+      previewDiv.innerHTML = '';
+      document.getElementById('preview').style.display = 'block';
+
+      sizes.forEach(({ size, filename }) => {
+        generateIcon(size, filename, previewDiv);
+      });
+
+      document.getElementById('success').classList.add('show');
+    }
+
+    function generateIcon(size, filename, previewDiv) {
+      const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = size;
+      canvas.height = size;
+
+      const img = new Image();
+      const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+
+      img.onload = function() {
+        ctx.drawImage(img, 0, 0, size, size);
+
+        // Create preview
+        const previewImg = document.createElement('img');
+        previewImg.src = canvas.toDataURL('image/png');
+        previewImg.width = size === 192 ? 192 : 256;
+        previewImg.alt = filename;
+        previewImg.title = filename;
+        previewDiv.appendChild(previewImg);
+
+        // Download
+        canvas.toBlob(function(blob) {
+          const link = document.createElement('a');
+          link.download = filename;
+          link.href = URL.createObjectURL(blob);
+          link.click();
+          URL.revokeObjectURL(link.href);
+        }, 'image/png');
+
+        URL.revokeObjectURL(url);
+      };
+
+      img.src = url;
+    }
+  </script>
+</body>
+</html>

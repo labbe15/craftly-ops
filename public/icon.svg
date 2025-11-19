@@ -1,0 +1,17 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="512" height="512" rx="128" fill="#3b82f6"/>
+
+  <!-- Tool icon - hammer and wrench -->
+  <g transform="translate(128, 128)">
+    <!-- Hammer -->
+    <path d="M140 60 L180 100 L120 160 L80 120 Z" fill="white" opacity="0.9"/>
+    <rect x="70" y="150" width="20" height="80" rx="5" fill="white" opacity="0.9" transform="rotate(-45 80 150)"/>
+
+    <!-- Wrench -->
+    <path d="M220 140 Q240 120 240 100 Q240 60 200 60 Q180 60 170 80 L190 100 L160 130 L200 170 L230 140 L210 120 Q230 100 220 140" fill="white" opacity="0.9"/>
+  </g>
+
+  <!-- Letter C -->
+  <text x="256" y="360" font-family="Arial, sans-serif" font-size="180" font-weight="bold" fill="white" text-anchor="middle">C</text>
+</svg>
