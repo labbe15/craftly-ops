@@ -14,7 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Calendar as CalendarIcon, Clock, User, Trash2 } from "lucide-react";
+import { Plus, Calendar as CalendarIcon, Clock, User, Trash2, Download } from "lucide-react";
 import { format, isSameDay } from "date-fns";
 import { fr } from "date-fns/locale";
 import {
@@ -91,6 +91,51 @@ export default function Agenda() {
     upcoming: events?.filter((e) => new Date(e.start_at) > new Date()).length || 0,
   };
 
+  const handleExportICS = () => {
+    if (!events || events.length === 0) {
+      toast({
+        title: "Aucun événement",
+        description: "Il n'y a aucun événement à exporter.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const formatDate = (date: string) => {
+      return format(new Date(date), "yyyyMMdd'T'HHmmss");
+    };
+
+    let icsContent = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//Craftly Ops//FR\n";
+
+    events.forEach((event) => {
+      icsContent += "BEGIN:VEVENT\n";
+      icsContent += `UID:${event.id}\n`;
+      icsContent += `DTSTAMP:${formatDate(new Date().toISOString())}\n`;
+      icsContent += `DTSTART:${formatDate(event.start_at)}\n`;
+      if (event.end_at) {
+        icsContent += `DTEND:${formatDate(event.end_at)}\n`;
+      }
+      icsContent += `SUMMARY:${event.title}\n`;
+      if (event.notes) {
+        icsContent += `DESCRIPTION:${event.notes.replace(/\n/g, "\\n")}\n`;
+      }
+      if (event.client?.name) {
+        icsContent += `LOCATION:Chez ${event.client.name}\n`;
+      }
+      icsContent += "END:VEVENT\n";
+    });
+
+    icsContent += "END:VCALENDAR";
+
+    const blob = new Blob([icsContent], { type: "text/calendar;charset=utf-8" });
+    const link = document.createElement("a");
+    link.href = window.URL.createObjectURL(blob);
+    link.setAttribute("download", "agenda.ics");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -109,10 +154,16 @@ export default function Agenda() {
             Gérez vos rendez-vous et événements
           </p>
         </div>
-        <Button onClick={() => navigate("/agenda/new")}>
-          <Plus className="h-4 w-4 mr-2" />
-          Nouvel événement
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleExportICS}>
+            <Download className="h-4 w-4 mr-2" />
+            Exporter .ICS
+          </Button>
+          <Button onClick={() => navigate("/agenda/new")}>
+            <Plus className="h-4 w-4 mr-2" />
+            Nouvel événement
+          </Button>
+        </div>
       </div>
 
       {/* Stats */}

@@ -38,7 +38,7 @@ export async function sendEmail(params: EmailParams) {
 
     // Call Supabase Edge Function to send email
     const { data, error } = await supabase.functions.invoke("send-email", {
-      body: { to, subject, html },
+      body: { to, subject, html, org_id: orgId },
     });
 
     if (error) {
