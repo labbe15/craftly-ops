@@ -16,9 +16,10 @@ import { ArrowLeft, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, addDays } from "date-fns";
 import { PDFPreview } from "@/components/pdf/PDFPreview";
+import { ClientDialogForm } from "@/components/clients/ClientDialogForm";
 
 interface QuoteLineItem {
   id: string;
@@ -33,6 +34,7 @@ interface QuoteLineItem {
 
 export default function QuoteForm() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<string>("");
   const [quoteNumber, setQuoteNumber] = useState<string>("");
@@ -337,22 +339,31 @@ export default function QuoteForm() {
 
               <div className="space-y-2">
                 <Label htmlFor="client_id">Client *</Label>
-                <Select
-                  value={selectedClientId}
-                  onValueChange={setSelectedClientId}
-                  required
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner un client" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clients?.map((client) => (
-                      <SelectItem key={client.id} value={client.id}>
-                        {client.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex gap-2">
+                  <Select
+                    value={selectedClientId}
+                    onValueChange={setSelectedClientId}
+                    required
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner un client" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {clients?.map((client) => (
+                        <SelectItem key={client.id} value={client.id}>
+                          {client.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <ClientDialogForm
+                    orgId={orgSettings?.org_id}
+                    onClientCreated={(id) => {
+                      queryClient.invalidateQueries({ queryKey: ["clients"] });
+                      setSelectedClientId(id);
+                    }}
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">

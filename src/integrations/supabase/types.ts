@@ -26,6 +26,7 @@ export type Database = {
           org_id: string
           phone: string | null
           tags: string | null
+          type: "professional" | "individual" | null
           updated_at: string | null
         }
         Insert: {
@@ -39,6 +40,7 @@ export type Database = {
           org_id: string
           phone?: string | null
           tags?: string | null
+          type?: "professional" | "individual" | null
           updated_at?: string | null
         }
         Update: {
@@ -52,6 +54,7 @@ export type Database = {
           org_id?: string
           phone?: string | null
           tags?: string | null
+          type?: "professional" | "individual" | null
           updated_at?: string | null
         }
         Relationships: []
@@ -265,6 +268,8 @@ export type Database = {
       }
       items: {
         Row: {
+          buying_price_ht: number | null
+          category: string | null
           created_at: string | null
           description: string | null
           id: string
@@ -277,6 +282,8 @@ export type Database = {
           vat_rate: number
         }
         Insert: {
+          buying_price_ht?: number | null
+          category?: string | null
           created_at?: string | null
           description?: string | null
           id?: string
@@ -289,6 +296,8 @@ export type Database = {
           vat_rate?: number
         }
         Update: {
+          buying_price_ht?: number | null
+          category?: string | null
           created_at?: string | null
           description?: string | null
           id?: string
@@ -365,6 +374,10 @@ export type Database = {
           phone: string | null
           quote_followup_days: number | null
           quote_prefix: string | null
+          smtp_host: string | null
+          smtp_port: number | null
+          smtp_user: string | null
+          smtp_password: string | null
           updated_at: string | null
           vat_number: string | null
         }
@@ -388,6 +401,10 @@ export type Database = {
           phone?: string | null
           quote_followup_days?: number | null
           quote_prefix?: string | null
+          smtp_host?: string | null
+          smtp_port?: number | null
+          smtp_user?: string | null
+          smtp_password?: string | null
           updated_at?: string | null
           vat_number?: string | null
         }
@@ -411,6 +428,10 @@ export type Database = {
           phone?: string | null
           quote_followup_days?: number | null
           quote_prefix?: string | null
+          smtp_host?: string | null
+          smtp_port?: number | null
+          smtp_user?: string | null
+          smtp_password?: string | null
           updated_at?: string | null
           vat_number?: string | null
         }

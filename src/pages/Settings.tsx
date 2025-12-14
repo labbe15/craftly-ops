@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { Loader2, Upload, Image as ImageIcon, X } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface OrgSettings {
   id?: string;
@@ -30,6 +31,10 @@ interface OrgSettings {
   payment_terms_days?: number;
   quote_followup_days?: number;
   invoice_overdue_days?: number;
+  smtp_host?: string;
+  smtp_port?: number;
+  smtp_user?: string;
+  smtp_password?: string;
 }
 
 export default function Settings() {
@@ -55,6 +60,10 @@ export default function Settings() {
     payment_terms_days: 30,
     quote_followup_days: 7,
     invoice_overdue_days: 15,
+    smtp_host: "",
+    smtp_port: 587,
+    smtp_user: "",
+    smtp_password: "",
   });
 
   // Fetch org settings
@@ -191,314 +200,384 @@ export default function Settings() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Informations Entreprise */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Informations Entreprise</CardTitle>
-            <CardDescription>
-              Vos informations d'entreprise apparaîtront sur les devis et factures
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="company_name">Nom de l'entreprise</Label>
-                <Input
-                  id="company_name"
-                  value={formData.company_name || ""}
-                  onChange={(e) => handleChange("company_name", e.target.value)}
-                  placeholder="Mon Entreprise"
-                />
-              </div>
+        <Tabs defaultValue="company" className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="company">Entreprise</TabsTrigger>
+            <TabsTrigger value="branding">Branding</TabsTrigger>
+            <TabsTrigger value="documents">Documents</TabsTrigger>
+            <TabsTrigger value="email">Email</TabsTrigger>
+          </TabsList>
 
-              <div className="space-y-2">
-                <Label htmlFor="vat_number">Numéro SIRET / TVA</Label>
-                <Input
-                  id="vat_number"
-                  value={formData.vat_number || ""}
-                  onChange={(e) => handleChange("vat_number", e.target.value)}
-                  placeholder="FR12345678901"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="address">Adresse</Label>
-              <Textarea
-                id="address"
-                value={formData.address || ""}
-                onChange={(e) => handleChange("address", e.target.value)}
-                placeholder="123 Rue de l'Artisan, 75000 Paris"
-                rows={3}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="phone">Téléphone</Label>
-              <Input
-                id="phone"
-                value={formData.phone || ""}
-                onChange={(e) => handleChange("phone", e.target.value)}
-                placeholder="+33 1 23 45 67 89"
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Branding */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Branding</CardTitle>
-            <CardDescription>
-              Personnalisez l'apparence de vos documents
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Logo Upload */}
-            <div className="space-y-2">
-              <Label>Logo de l'entreprise</Label>
-              <div className="flex items-start gap-4">
-                {formData.header_bg_url ? (
-                  <div className="relative">
-                    <img
-                      src={formData.header_bg_url}
-                      alt="Logo entreprise"
-                      className="h-24 w-auto object-contain border rounded-lg p-2"
+          <TabsContent value="company" className="mt-4">
+            {/* Informations Entreprise */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Informations Entreprise</CardTitle>
+                <CardDescription>
+                  Vos informations d'entreprise apparaîtront sur les devis et factures
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="company_name">Nom de l'entreprise</Label>
+                    <Input
+                      id="company_name"
+                      value={formData.company_name || ""}
+                      onChange={(e) => handleChange("company_name", e.target.value)}
+                      placeholder="Mon Entreprise"
                     />
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="icon"
-                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
-                      onClick={handleRemoveLogo}
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
                   </div>
-                ) : (
-                  <div className="h-24 w-24 border-2 border-dashed rounded-lg flex items-center justify-center bg-muted">
-                    <ImageIcon className="h-8 w-8 text-muted-foreground" />
+
+                  <div className="space-y-2">
+                    <Label htmlFor="vat_number">Numéro SIRET / TVA</Label>
+                    <Input
+                      id="vat_number"
+                      value={formData.vat_number || ""}
+                      onChange={(e) => handleChange("vat_number", e.target.value)}
+                      placeholder="FR12345678901"
+                    />
                   </div>
-                )}
-                <div className="flex-1 space-y-2">
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleLogoUpload}
-                    className="hidden"
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="address">Adresse</Label>
+                  <Textarea
+                    id="address"
+                    value={formData.address || ""}
+                    onChange={(e) => handleChange("address", e.target.value)}
+                    placeholder="123 Rue de l'Artisan, 75000 Paris"
+                    rows={3}
                   />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={uploadingLogo}
-                  >
-                    {uploadingLogo ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Upload en cours...
-                      </>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Téléphone</Label>
+                  <Input
+                    id="phone"
+                    value={formData.phone || ""}
+                    onChange={(e) => handleChange("phone", e.target.value)}
+                    placeholder="+33 1 23 45 67 89"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="branding" className="mt-4">
+            {/* Branding */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Branding</CardTitle>
+                <CardDescription>
+                  Personnalisez l'apparence de vos documents
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Logo Upload */}
+                <div className="space-y-2">
+                  <Label>Logo de l'entreprise</Label>
+                  <div className="flex items-start gap-4">
+                    {formData.header_bg_url ? (
+                      <div className="relative">
+                        <img
+                          src={formData.header_bg_url}
+                          alt="Logo entreprise"
+                          className="h-24 w-auto object-contain border rounded-lg p-2"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                          onClick={handleRemoveLogo}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
                     ) : (
-                      <>
-                        <Upload className="mr-2 h-4 w-4" />
-                        {formData.header_bg_url ? "Changer le logo" : "Uploader un logo"}
-                      </>
+                      <div className="h-24 w-24 border-2 border-dashed rounded-lg flex items-center justify-center bg-muted">
+                        <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                      </div>
                     )}
-                  </Button>
-                  <p className="text-xs text-muted-foreground">
-                    PNG, JPG ou SVG. Taille max: 2 Mo. Recommandé: 300x100px
+                    <div className="flex-1 space-y-2">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleLogoUpload}
+                        className="hidden"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={uploadingLogo}
+                      >
+                        {uploadingLogo ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Upload en cours...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="mr-2 h-4 w-4" />
+                            {formData.header_bg_url ? "Changer le logo" : "Uploader un logo"}
+                          </>
+                        )}
+                      </Button>
+                      <p className="text-xs text-muted-foreground">
+                        PNG, JPG ou SVG. Taille max: 2 Mo. Recommandé: 300x100px
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="brand_primary">Couleur Principale</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="brand_primary"
+                        type="color"
+                        value={formData.brand_primary || "#3b82f6"}
+                        onChange={(e) => handleChange("brand_primary", e.target.value)}
+                        className="w-20 h-10"
+                      />
+                      <Input
+                        value={formData.brand_primary || "#3b82f6"}
+                        onChange={(e) => handleChange("brand_primary", e.target.value)}
+                        placeholder="#3b82f6"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="brand_secondary">Couleur Secondaire</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="brand_secondary"
+                        type="color"
+                        value={formData.brand_secondary || "#1e40af"}
+                        onChange={(e) => handleChange("brand_secondary", e.target.value)}
+                        className="w-20 h-10"
+                      />
+                      <Input
+                        value={formData.brand_secondary || "#1e40af"}
+                        onChange={(e) => handleChange("brand_secondary", e.target.value)}
+                        placeholder="#1e40af"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="font">Police de caractères</Label>
+                  <Input
+                    id="font"
+                    value={formData.font || "Inter"}
+                    onChange={(e) => handleChange("font", e.target.value)}
+                    placeholder="Inter"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="footer_text">Pied de page (mentions légales)</Label>
+                  <Textarea
+                    id="footer_text"
+                    value={formData.footer_text || ""}
+                    onChange={(e) => handleChange("footer_text", e.target.value)}
+                    placeholder="RCS Paris B 123 456 789 - Capital social : 10 000€"
+                    rows={3}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="email" className="mt-4">
+            {/* Configuration Email */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Configuration Email</CardTitle>
+                <CardDescription>
+                  Paramètres d'envoi des emails (devis, factures, relances)
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email_from_address">Adresse email (visible)</Label>
+                    <Input
+                      id="email_from_address"
+                      type="email"
+                      value={formData.email_from_address || ""}
+                      onChange={(e) => handleChange("email_from_address", e.target.value)}
+                      placeholder="contact@monentreprise.fr"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="email_sender_name">Nom de l'expéditeur</Label>
+                    <Input
+                      id="email_sender_name"
+                      value={formData.email_sender_name || ""}
+                      onChange={(e) => handleChange("email_sender_name", e.target.value)}
+                      placeholder="Mon Entreprise"
+                    />
+                  </div>
+                </div>
+
+                <Separator className="my-4" />
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium">Serveur SMTP (Optionnel)</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Configurez votre propre serveur SMTP pour envoyer les emails depuis votre propre adresse.
+                    Laissez vide pour utiliser le serveur par défaut.
                   </p>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="smtp_host">Serveur SMTP</Label>
+                      <Input
+                        id="smtp_host"
+                        value={formData.smtp_host || ""}
+                        onChange={(e) => handleChange("smtp_host", e.target.value)}
+                        placeholder="smtp.gmail.com"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="smtp_port">Port SMTP</Label>
+                      <Input
+                        id="smtp_port"
+                        type="number"
+                        value={formData.smtp_port || 587}
+                        onChange={(e) => handleChange("smtp_port", parseInt(e.target.value))}
+                        placeholder="587"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="smtp_user">Utilisateur SMTP</Label>
+                      <Input
+                        id="smtp_user"
+                        value={formData.smtp_user || ""}
+                        onChange={(e) => handleChange("smtp_user", e.target.value)}
+                        placeholder="votre@email.com"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="smtp_password">Mot de passe SMTP</Label>
+                      <Input
+                        id="smtp_password"
+                        type="password"
+                        value={formData.smtp_password || ""}
+                        onChange={(e) => handleChange("smtp_password", e.target.value)}
+                        placeholder="Votre mot de passe d'application"
+                      />
+                    </div>
+                  </div>
+                  <Button type="button" variant="outline" onClick={() => toast.info("Fonctionnalité de test à venir")}>
+                    Tester la connexion
+                  </Button>
                 </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-            <Separator />
+          <TabsContent value="documents" className="mt-4">
+            {/* Paramètres Documents */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Paramètres Documents</CardTitle>
+                <CardDescription>
+                  Configuration des devis et factures
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="quote_prefix">Préfixe devis</Label>
+                    <Input
+                      id="quote_prefix"
+                      value={formData.quote_prefix || "DEV-"}
+                      onChange={(e) => handleChange("quote_prefix", e.target.value)}
+                      placeholder="DEV-"
+                    />
+                  </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="brand_primary">Couleur Principale</Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="brand_primary"
-                    type="color"
-                    value={formData.brand_primary || "#3b82f6"}
-                    onChange={(e) => handleChange("brand_primary", e.target.value)}
-                    className="w-20 h-10"
-                  />
-                  <Input
-                    value={formData.brand_primary || "#3b82f6"}
-                    onChange={(e) => handleChange("brand_primary", e.target.value)}
-                    placeholder="#3b82f6"
-                  />
+                  <div className="space-y-2">
+                    <Label htmlFor="invoice_prefix">Préfixe facture</Label>
+                    <Input
+                      id="invoice_prefix"
+                      value={formData.invoice_prefix || "FACT-"}
+                      onChange={(e) => handleChange("invoice_prefix", e.target.value)}
+                      placeholder="FACT-"
+                    />
+                  </div>
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="brand_secondary">Couleur Secondaire</Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="brand_secondary"
-                    type="color"
-                    value={formData.brand_secondary || "#1e40af"}
-                    onChange={(e) => handleChange("brand_secondary", e.target.value)}
-                    className="w-20 h-10"
-                  />
-                  <Input
-                    value={formData.brand_secondary || "#1e40af"}
-                    onChange={(e) => handleChange("brand_secondary", e.target.value)}
-                    placeholder="#1e40af"
-                  />
+                <Separator />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="default_vat_rate">TVA par défaut (%)</Label>
+                    <Input
+                      id="default_vat_rate"
+                      type="number"
+                      step="0.01"
+                      value={formData.default_vat_rate || 20}
+                      onChange={(e) => handleChange("default_vat_rate", parseFloat(e.target.value))}
+                      placeholder="20"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="payment_terms_days">Délai de paiement (jours)</Label>
+                    <Input
+                      id="payment_terms_days"
+                      type="number"
+                      value={formData.payment_terms_days || 30}
+                      onChange={(e) => handleChange("payment_terms_days", parseInt(e.target.value))}
+                      placeholder="30"
+                    />
+                  </div>
                 </div>
-              </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="font">Police de caractères</Label>
-              <Input
-                id="font"
-                value={formData.font || "Inter"}
-                onChange={(e) => handleChange("font", e.target.value)}
-                placeholder="Inter"
-              />
-            </div>
+                <Separator />
 
-            <div className="space-y-2">
-              <Label htmlFor="footer_text">Pied de page (mentions légales)</Label>
-              <Textarea
-                id="footer_text"
-                value={formData.footer_text || ""}
-                onChange={(e) => handleChange("footer_text", e.target.value)}
-                placeholder="RCS Paris B 123 456 789 - Capital social : 10 000€"
-                rows={3}
-              />
-            </div>
-          </CardContent>
-        </Card>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="quote_followup_days">
+                      Relance devis non répondus (jours)
+                    </Label>
+                    <Input
+                      id="quote_followup_days"
+                      type="number"
+                      value={formData.quote_followup_days || 7}
+                      onChange={(e) => handleChange("quote_followup_days", parseInt(e.target.value))}
+                      placeholder="7"
+                    />
+                  </div>
 
-        {/* Configuration Email */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Configuration Email</CardTitle>
-            <CardDescription>
-              Paramètres d'envoi des emails (devis, factures, relances)
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="email_from_address">Adresse email</Label>
-                <Input
-                  id="email_from_address"
-                  type="email"
-                  value={formData.email_from_address || ""}
-                  onChange={(e) => handleChange("email_from_address", e.target.value)}
-                  placeholder="contact@monentreprise.fr"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="email_sender_name">Nom de l'expéditeur</Label>
-                <Input
-                  id="email_sender_name"
-                  value={formData.email_sender_name || ""}
-                  onChange={(e) => handleChange("email_sender_name", e.target.value)}
-                  placeholder="Mon Entreprise"
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Paramètres Documents */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Paramètres Documents</CardTitle>
-            <CardDescription>
-              Configuration des devis et factures
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="quote_prefix">Préfixe devis</Label>
-                <Input
-                  id="quote_prefix"
-                  value={formData.quote_prefix || "DEV-"}
-                  onChange={(e) => handleChange("quote_prefix", e.target.value)}
-                  placeholder="DEV-"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="invoice_prefix">Préfixe facture</Label>
-                <Input
-                  id="invoice_prefix"
-                  value={formData.invoice_prefix || "FACT-"}
-                  onChange={(e) => handleChange("invoice_prefix", e.target.value)}
-                  placeholder="FACT-"
-                />
-              </div>
-            </div>
-
-            <Separator />
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="default_vat_rate">TVA par défaut (%)</Label>
-                <Input
-                  id="default_vat_rate"
-                  type="number"
-                  step="0.01"
-                  value={formData.default_vat_rate || 20}
-                  onChange={(e) => handleChange("default_vat_rate", parseFloat(e.target.value))}
-                  placeholder="20"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="payment_terms_days">Délai de paiement (jours)</Label>
-                <Input
-                  id="payment_terms_days"
-                  type="number"
-                  value={formData.payment_terms_days || 30}
-                  onChange={(e) => handleChange("payment_terms_days", parseInt(e.target.value))}
-                  placeholder="30"
-                />
-              </div>
-            </div>
-
-            <Separator />
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="quote_followup_days">
-                  Relance devis non répondus (jours)
-                </Label>
-                <Input
-                  id="quote_followup_days"
-                  type="number"
-                  value={formData.quote_followup_days || 7}
-                  onChange={(e) => handleChange("quote_followup_days", parseInt(e.target.value))}
-                  placeholder="7"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="invoice_overdue_days">
-                  Relance factures impayées (jours)
-                </Label>
-                <Input
-                  id="invoice_overdue_days"
-                  type="number"
-                  value={formData.invoice_overdue_days || 15}
-                  onChange={(e) => handleChange("invoice_overdue_days", parseInt(e.target.value))}
-                  placeholder="15"
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+                  <div className="space-y-2">
+                    <Label htmlFor="invoice_overdue_days">
+                      Relance factures impayées (jours)
+                    </Label>
+                    <Input
+                      id="invoice_overdue_days"
+                      type="number"
+                      value={formData.invoice_overdue_days || 15}
+                      onChange={(e) => handleChange("invoice_overdue_days", parseInt(e.target.value))}
+                      placeholder="15"
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
 
         <div className="flex justify-end">
           <Button
