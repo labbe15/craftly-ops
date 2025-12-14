@@ -4,6 +4,8 @@
  */
 
 const PAPPERS_API_BASE_URL = "https://api.pappers.fr/v2";
+// TODO: SECURITY - Cette clé API est exposée côté client.
+// Il faut configurer un proxy via une Edge Function Supabase ou restreindre le domaine (Referer) dans le dashboard Pappers.
 const PAPPERS_API_KEY = import.meta.env.VITE_PAPPERS_API_KEY;
 
 export interface PappersCompanyData {

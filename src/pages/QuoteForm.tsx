@@ -241,6 +241,12 @@ export default function QuoteForm() {
 
     try {
       // Validate
+      if (!orgSettings?.org_id) {
+        toast.error("Organisation non trouvée");
+        setLoading(false);
+        return;
+      }
+
       if (!selectedClientId) {
         toast.error("Veuillez sélectionner un client");
         setLoading(false);
@@ -259,7 +265,7 @@ export default function QuoteForm() {
         .insert({
           number: quoteNumber,
           client_id: selectedClientId,
-          org_id: crypto.randomUUID(), // TODO: Use actual org_id from auth
+          org_id: orgSettings.org_id,
           status: "draft",
           expires_at: expiresAt,
           terms_text: termsText,

@@ -116,3 +116,18 @@ export async function convertQuoteToInvoice(
     throw error;
   }
 }
+
+export async function checkExistingInvoice(quoteId: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("invoices")
+    .select("id")
+    .eq("quote_id", quoteId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Error checking existing invoice:", error);
+    return false;
+  }
+
+  return !!data;
+}
