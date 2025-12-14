@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -7,28 +7,37 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Session } from "@supabase/supabase-js";
 import { AppLayout } from "@/components/layout/AppLayout";
-import Auth from "./pages/Auth";
-import Dashboard from "./pages/Dashboard";
-import Clients from "./pages/Clients";
-import ClientForm from "./pages/ClientForm";
-import ClientDetail from "./pages/ClientDetail";
-import Items from "./pages/Items";
-import ItemForm from "./pages/ItemForm";
-import Quotes from "./pages/Quotes";
-import QuoteForm from "./pages/QuoteForm";
-import QuoteDetail from "./pages/QuoteDetail";
-import Invoices from "./pages/Invoices";
-import InvoiceForm from "./pages/InvoiceForm";
-import InvoiceDetail from "./pages/InvoiceDetail";
-import Agenda from "./pages/Agenda";
-import EventForm from "./pages/EventForm";
-import Reminders from "./pages/Reminders";
-import ReminderSchedules from "./pages/ReminderSchedules";
-import Settings from "./pages/Settings";
-import Exports from "./pages/Exports";
-import NotFound from "./pages/NotFound";
+import { Loader2 } from "lucide-react";
+
+// Lazy load pages for performance
+const Auth = lazy(() => import("./pages/Auth"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Clients = lazy(() => import("./pages/Clients"));
+const ClientForm = lazy(() => import("./pages/ClientForm"));
+const ClientDetail = lazy(() => import("./pages/ClientDetail"));
+const Items = lazy(() => import("./pages/Items"));
+const ItemForm = lazy(() => import("./pages/ItemForm"));
+const Quotes = lazy(() => import("./pages/Quotes"));
+const QuoteForm = lazy(() => import("./pages/QuoteForm"));
+const QuoteDetail = lazy(() => import("./pages/QuoteDetail"));
+const Invoices = lazy(() => import("./pages/Invoices"));
+const InvoiceForm = lazy(() => import("./pages/InvoiceForm"));
+const InvoiceDetail = lazy(() => import("./pages/InvoiceDetail"));
+const Agenda = lazy(() => import("./pages/Agenda"));
+const EventForm = lazy(() => import("./pages/EventForm"));
+const Reminders = lazy(() => import("./pages/Reminders"));
+const ReminderSchedules = lazy(() => import("./pages/ReminderSchedules"));
+const Settings = lazy(() => import("./pages/Settings"));
+const Exports = lazy(() => import("./pages/Exports"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
+
+const PageLoader = () => (
+  <div className="flex items-center justify-center h-full min-h-[50vh]">
+    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+  </div>
+);
 
 const App = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -64,39 +73,47 @@ const App = () => {
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Routes>
-            <Route path="/auth" element={!session ? <Auth /> : <Navigate to="/" />} />
-            
-            {session ? (
-              <Route element={<AppLayout />}>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/clients" element={<Clients />} />
-                <Route path="/clients/new" element={<ClientForm />} />
-                <Route path="/clients/:id" element={<ClientDetail />} />
-                <Route path="/clients/:id/edit" element={<ClientForm />} />
-                <Route path="/items" element={<Items />} />
-                <Route path="/items/new" element={<ItemForm />} />
-                <Route path="/items/:id" element={<ItemForm />} />
-                <Route path="/quotes" element={<Quotes />} />
-                <Route path="/quotes/new" element={<QuoteForm />} />
-                <Route path="/quotes/:id" element={<QuoteDetail />} />
-                <Route path="/invoices" element={<Invoices />} />
-                <Route path="/invoices/new" element={<InvoiceForm />} />
-                <Route path="/invoices/:id" element={<InvoiceDetail />} />
-                <Route path="/agenda" element={<Agenda />} />
-                <Route path="/agenda/new" element={<EventForm />} />
-                <Route path="/agenda/:id" element={<EventForm />} />
-                <Route path="/reminders" element={<Reminders />} />
-                <Route path="/reminders/schedules" element={<ReminderSchedules />} />
-                <Route path="/exports" element={<Exports />} />
-                <Route path="/settings" element={<Settings />} />
-              </Route>
-            ) : (
-              <Route path="*" element={<Navigate to="/auth" />} />
-            )}
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
+              <Route
+                path="/auth"
+                element={!session ? <Auth /> : <Navigate to="/" />}
+              />
 
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+              {session ? (
+                <Route element={<AppLayout />}>
+                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/clients" element={<Clients />} />
+                  <Route path="/clients/new" element={<ClientForm />} />
+                  <Route path="/clients/:id" element={<ClientDetail />} />
+                  <Route path="/clients/:id/edit" element={<ClientForm />} />
+                  <Route path="/items" element={<Items />} />
+                  <Route path="/items/new" element={<ItemForm />} />
+                  <Route path="/items/:id" element={<ItemForm />} />
+                  <Route path="/quotes" element={<Quotes />} />
+                  <Route path="/quotes/new" element={<QuoteForm />} />
+                  <Route path="/quotes/:id" element={<QuoteDetail />} />
+                  <Route path="/invoices" element={<Invoices />} />
+                  <Route path="/invoices/new" element={<InvoiceForm />} />
+                  <Route path="/invoices/:id" element={<InvoiceDetail />} />
+                  <Route path="/agenda" element={<Agenda />} />
+                  <Route path="/agenda/new" element={<EventForm />} />
+                  <Route path="/agenda/:id" element={<EventForm />} />
+                  <Route path="/reminders" element={<Reminders />} />
+                  <Route
+                    path="/reminders/schedules"
+                    element={<ReminderSchedules />}
+                  />
+                  <Route path="/exports" element={<Exports />} />
+                  <Route path="/settings" element={<Settings />} />
+                </Route>
+              ) : (
+                <Route path="*" element={<Navigate to="/auth" />} />
+              )}
+
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
