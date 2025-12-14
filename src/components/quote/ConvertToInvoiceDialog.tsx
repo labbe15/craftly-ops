@@ -15,7 +15,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { convertQuoteToInvoice } from "@/services/quoteToInvoiceService";
+import { convertQuoteToInvoice, checkExistingInvoice } from "@/services/quoteToInvoiceService";
 
 interface ConvertToInvoiceDialogProps {
   quoteId: string;
@@ -58,7 +58,17 @@ export function ConvertToInvoiceDialog({
     },
   });
 
-  const handleConvert = () => {
+  const handleConvert = async () => {
+    const exists = await checkExistingInvoice(quoteId);
+    if (exists) {
+      toast({
+        title: "Action impossible",
+        description: "Ce devis a déjà été converti en facture.",
+        variant: "destructive",
+      });
+      setOpen(false);
+      return;
+    }
     convertMutation.mutate();
   };
 

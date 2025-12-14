@@ -290,6 +290,12 @@ export default function InvoiceForm() {
 
     try {
       // Validate
+      if (!orgSettings?.org_id) {
+        toast.error("Organisation non trouvée");
+        setLoading(false);
+        return;
+      }
+
       if (!selectedClientId) {
         toast.error("Veuillez sélectionner un client");
         setLoading(false);
@@ -309,7 +315,7 @@ export default function InvoiceForm() {
           number: invoiceNumber,
           client_id: selectedClientId,
           quote_id: selectedQuoteId || null,
-          org_id: crypto.randomUUID(), // TODO: Use actual org_id from auth
+          org_id: orgSettings.org_id,
           status: "draft",
           due_date: dueDate,
           notes: notes,
