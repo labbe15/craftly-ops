@@ -41,6 +41,7 @@ export default function Settings() {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [testLoading, setTestLoading] = useState(false);
   const [formData, setFormData] = useState<OrgSettings>({
     org_id: crypto.randomUUID(),
     company_name: "",
@@ -183,6 +184,52 @@ export default function Settings() {
   const handleRemoveLogo = () => {
     setFormData((prev) => ({ ...prev, header_bg_url: "" }));
     toast.success("Logo supprimé");
+  };
+
+  const handleTestConnection = async () => {
+    if (!formData.smtp_host || !formData.smtp_user || !formData.smtp_password) {
+      toast.error("Veuillez remplir les champs SMTP avant de tester");
+      return;
+    }
+
+    setTestLoading(true);
+    try {
+      // Save current settings first to ensure the edge function can access them
+      // Or pass them directly? The edge function seems to fetch from DB based on org_id.
+      // So we must save first or pass credentials.
+      // Let's look at the edge function: it fetches from org_settings.
+      // So we MUST save first.
+
+      // But wait, the user might not want to save invalid settings.
+      // Ideally the edge function should accept credentials in the body for testing.
+      // But based on previous turn, it fetches from DB.
+      // Let's assume we save first or just warn the user.
+
+      // Actually, looking at the previous turn's edge function code I wrote:
+      // It fetches `orgSettings` using `org_id`.
+      // It does NOT accept SMTP credentials in the payload.
+      // So we have to save first.
+
+      await saveMutation.mutateAsync(formData);
+
+      const { error } = await supabase.functions.invoke("send-email", {
+        body: {
+          to: formData.email_from_address || formData.smtp_user, // Send to self
+          subject: "Test de connexion SMTP Craftly Ops",
+          html: "<p>Ceci est un email de test pour vérifier votre configuration SMTP.</p>",
+          org_id: formData.org_id,
+        },
+      });
+
+      if (error) throw error;
+
+      toast.success("Connexion SMTP réussie ! Un email de test a été envoyé.");
+    } catch (error: any) {
+      console.error("SMTP Test Error:", error);
+      toast.error("Échec du test SMTP : " + (error.message || "Erreur inconnue"));
+    } finally {
+      setTestLoading(false);
+    }
   };
 
   if (isLoading) {
@@ -478,7 +525,8 @@ export default function Settings() {
                       />
                     </div>
                   </div>
-                  <Button type="button" variant="outline" onClick={() => toast.info("Fonctionnalité de test à venir")}>
+                  <Button type="button" variant="outline" onClick={handleTestConnection} disabled={testLoading}>
+                    {testLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Tester la connexion
                   </Button>
                 </div>
