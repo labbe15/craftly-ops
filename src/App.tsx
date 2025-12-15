@@ -9,7 +9,7 @@ import { Session } from "@supabase/supabase-js";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Loader2 } from "lucide-react";
 
-// --- LAZY LOADING DES PAGES (Pour accélérer le site) ---
+// --- LAZY LOADING (Optimisation Vitesse) ---
 const Auth = lazy(() => import("./pages/Auth"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Clients = lazy(() => import("./pages/Clients"));
@@ -33,7 +33,6 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
 
-// Petit composant de chargement pendant qu'une page arrive
 const PageLoader = () => (
   <div className="flex h-screen w-full items-center justify-center">
     <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -45,13 +44,11 @@ const App = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Écoute les changements d'auth
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setLoading(false);
     });
 
-    // Vérifie la session au démarrage
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setLoading(false);
@@ -60,9 +57,7 @@ const App = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  if (loading) {
-    return <PageLoader />;
-  }
+  if (loading) return <PageLoader />;
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -73,7 +68,6 @@ const App = () => {
           <Suspense fallback={<PageLoader />}>
             <Routes>
               <Route path="/auth" element={!session ? <Auth /> : <Navigate to="/" />} />
-              
               {session ? (
                 <Route element={<AppLayout />}>
                   <Route path="/" element={<Dashboard />} />
@@ -101,7 +95,6 @@ const App = () => {
               ) : (
                 <Route path="*" element={<Navigate to="/auth" />} />
               )}
-
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
