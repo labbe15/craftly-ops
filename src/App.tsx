@@ -1,4 +1,4 @@
-import { useEffect, useState, lazy, Suspense } from "react";
+import { useEffect, useState, Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,7 +9,7 @@ import { Session } from "@supabase/supabase-js";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Loader2 } from "lucide-react";
 
-// Lazy load pages for performance
+// --- LAZY LOADING DES PAGES (Pour accélérer le site) ---
 const Auth = lazy(() => import("./pages/Auth"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Clients = lazy(() => import("./pages/Clients"));
@@ -33,8 +33,9 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
 
+// Petit composant de chargement pendant qu'une page arrive
 const PageLoader = () => (
-  <div className="flex items-center justify-center h-full min-h-[50vh]">
+  <div className="flex h-screen w-full items-center justify-center">
     <Loader2 className="h-8 w-8 animate-spin text-primary" />
   </div>
 );
@@ -44,13 +45,13 @@ const App = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Setup auth state listener
+    // Écoute les changements d'auth
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setLoading(false);
     });
 
-    // Check existing session
+    // Vérifie la session au démarrage
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setLoading(false);
@@ -60,11 +61,7 @@ const App = () => {
   }, []);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">Chargement...</div>
-      </div>
-    );
+    return <PageLoader />;
   }
 
   return (
@@ -75,11 +72,8 @@ const App = () => {
         <BrowserRouter>
           <Suspense fallback={<PageLoader />}>
             <Routes>
-              <Route
-                path="/auth"
-                element={!session ? <Auth /> : <Navigate to="/" />}
-              />
-
+              <Route path="/auth" element={!session ? <Auth /> : <Navigate to="/" />} />
+              
               {session ? (
                 <Route element={<AppLayout />}>
                   <Route path="/" element={<Dashboard />} />
@@ -100,10 +94,7 @@ const App = () => {
                   <Route path="/agenda/new" element={<EventForm />} />
                   <Route path="/agenda/:id" element={<EventForm />} />
                   <Route path="/reminders" element={<Reminders />} />
-                  <Route
-                    path="/reminders/schedules"
-                    element={<ReminderSchedules />}
-                  />
+                  <Route path="/reminders/schedules" element={<ReminderSchedules />} />
                   <Route path="/exports" element={<Exports />} />
                   <Route path="/settings" element={<Settings />} />
                 </Route>

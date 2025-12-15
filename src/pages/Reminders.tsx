@@ -115,13 +115,10 @@ export default function Reminders() {
       });
 
       if (error) throw error;
-
-      // In a real app, you would call your email service here
-      // For now, we just log it in the database
     },
     onSuccess: (_, variables) => {
       toast.success(
-        `Relance envoy�e pour ${variables.type === "quote" ? "le devis" : "la facture"} ${variables.number}`
+        `Relance envoyée pour ${variables.type === "quote" ? "le devis" : "la facture"} ${variables.number}`
       );
       queryClient.invalidateQueries({ queryKey: ["mail_log_reminders"] });
       setSendingReminder(null);
@@ -187,35 +184,35 @@ export default function Reminders() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Devis � relancer
+              Devis à relancer
             </CardTitle>
             <AlertCircle className="h-4 w-4 text-orange-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.quotesNeedingReminder}</div>
             <p className="text-xs text-muted-foreground">
-              Apr�s {orgSettings?.quote_followup_days || 7} jours sans r�ponse
+              Après {orgSettings?.quote_followup_days || 7} jours sans réponse
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Factures � relancer
+              Factures à relancer
             </CardTitle>
             <AlertCircle className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.invoicesNeedingReminder}</div>
             <p className="text-xs text-muted-foreground">
-              �chues ou en retard
+              Échues ou en retard
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Relances envoy�es
+              Relances envoyées
             </CardTitle>
             <CheckCircle className="h-4 w-4 text-green-500" />
           </CardHeader>
@@ -244,10 +241,10 @@ export default function Reminders() {
         <TabsContent value="quotes" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Devis n�cessitant une relance</CardTitle>
+              <CardTitle>Devis nécessitant une relance</CardTitle>
               <CardDescription>
-                Devis envoy�s il y a plus de {orgSettings?.quote_followup_days || 7}{" "}
-                jours sans r�ponse
+                Devis envoyés il y a plus de {orgSettings?.quote_followup_days || 7}{" "}
+                jours sans réponse
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -255,11 +252,11 @@ export default function Reminders() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Num�ro</TableHead>
+                      <TableHead>Numéro</TableHead>
                       <TableHead>Client</TableHead>
                       <TableHead>Montant</TableHead>
-                      <TableHead>Envoy� le</TableHead>
-                      <TableHead>Jours �coul�s</TableHead>
+                      <TableHead>Envoyé le</TableHead>
+                      <TableHead>Jours écoulés</TableHead>
                       <TableHead className="text-right">Action</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -281,7 +278,7 @@ export default function Reminders() {
                             </span>
                           </TableCell>
                           <TableCell>
-                            {quote.totals_ttc?.toFixed(2)} �
+                            {quote.totals_ttc?.toFixed(2)} €
                           </TableCell>
                           <TableCell>
                             {quote.sent_at
@@ -339,7 +336,7 @@ export default function Reminders() {
                 <div className="text-center py-8">
                   <Bell className="mx-auto h-12 w-12 text-muted-foreground" />
                   <p className="mt-4 text-sm text-muted-foreground">
-                    Aucun devis ne n�cessite de relance pour le moment
+                    Aucun devis ne nécessite de relance pour le moment
                   </p>
                 </div>
               )}
@@ -351,9 +348,9 @@ export default function Reminders() {
         <TabsContent value="invoices" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Factures n�cessitant une relance</CardTitle>
+              <CardTitle>Factures nécessitant une relance</CardTitle>
               <CardDescription>
-                Factures �chues ou en retard de paiement
+                Factures échues ou en retard de paiement
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -361,10 +358,10 @@ export default function Reminders() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Num�ro</TableHead>
+                      <TableHead>Numéro</TableHead>
                       <TableHead>Client</TableHead>
                       <TableHead>Montant</TableHead>
-                      <TableHead>�ch�ance</TableHead>
+                      <TableHead>Échéance</TableHead>
                       <TableHead>Retard</TableHead>
                       <TableHead className="text-right">Action</TableHead>
                     </TableRow>
@@ -392,7 +389,7 @@ export default function Reminders() {
                             </span>
                           </TableCell>
                           <TableCell>
-                            {invoice.totals_ttc?.toFixed(2)} �
+                            {invoice.totals_ttc?.toFixed(2)} €
                           </TableCell>
                           <TableCell>
                             {invoice.due_date
@@ -447,7 +444,7 @@ export default function Reminders() {
                 <div className="text-center py-8">
                   <CheckCircle className="mx-auto h-12 w-12 text-green-500" />
                   <p className="mt-4 text-sm text-muted-foreground">
-                    Toutes les factures sont � jour !
+                    Toutes les factures sont à jour !
                   </p>
                 </div>
               )}
@@ -461,7 +458,7 @@ export default function Reminders() {
             <CardHeader>
               <CardTitle>Historique des relances</CardTitle>
               <CardDescription>
-                Les 50 derni�res relances envoy�es
+                Les 50 dernières relances envoyées
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -518,7 +515,7 @@ export default function Reminders() {
                 <div className="text-center py-8">
                   <Mail className="mx-auto h-12 w-12 text-muted-foreground" />
                   <p className="mt-4 text-sm text-muted-foreground">
-                    Aucune relance envoy�e pour le moment
+                    Aucune relance envoyée pour le moment
                   </p>
                 </div>
               )}
