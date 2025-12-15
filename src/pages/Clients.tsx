@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,10 +11,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useNavigate } from "react-router-dom";
-import { Plus, Pencil, Trash2, Search, Users, Eye } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Users, Eye, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { useDebounce } from "@/hooks/use-debounce";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,17 +33,44 @@ export default function Clients() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearch = useDebounce(searchTerm, 500);
+  const [page, setPage] = useState(0);
+  const itemsPerPage = 50;
 
-  const { data: clients, isLoading } = useQuery({
-    queryKey: ["clients"],
+  // Reset page when search changes
+  useEffect(() => {
+    setPage(0);
+  }, [debouncedSearch]);
+
+  const { data: clients, isLoading, isPlaceholderData } = useQuery({
+    queryKey: ["clients", debouncedSearch, page],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("clients")
-        .select("*")
-        .order("created_at", { ascending: false });
+        .select("id, name, contact_name, email, phone, created_at")
+        .order("created_at", { ascending: false })
+        .range(page * itemsPerPage, (page + 1) * itemsPerPage - 1);
 
+      if (debouncedSearch) {
+        query = query.or(`name.ilike.%${debouncedSearch}%,contact_name.ilike.%${debouncedSearch}%,email.ilike.%${debouncedSearch}%`);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       return data;
+    },
+    placeholderData: (previousData) => previousData,
+  });
+
+  const { data: stats } = useQuery({
+    queryKey: ["clients-count"],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("clients")
+        .select("*", { count: "exact", head: true });
+
+      if (error) throw error;
+      return { total: count || 0 };
     },
   });
 
@@ -53,6 +81,7 @@ export default function Clients() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["clients"] });
+      queryClient.invalidateQueries({ queryKey: ["clients-count"] });
       toast({
         title: "Client supprimé",
         description: "Le client a été supprimé avec succès.",
@@ -66,30 +95,6 @@ export default function Clients() {
       });
     },
   });
-
-  // Filter clients
-  const filteredClients = clients?.filter((client) => {
-    const search = searchTerm.toLowerCase();
-    return (
-      client.name?.toLowerCase().includes(search) ||
-      client.contact_name?.toLowerCase().includes(search) ||
-      client.email?.toLowerCase().includes(search) ||
-      client.phone?.toLowerCase().includes(search) ||
-      client.address?.toLowerCase().includes(search)
-    );
-  });
-
-  const stats = {
-    total: clients?.length || 0,
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <p className="text-muted-foreground">Chargement...</p>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
@@ -114,7 +119,7 @@ export default function Clients() {
           <Users className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{stats.total}</div>
+          <div className="text-2xl font-bold">{stats?.total || 0}</div>
         </CardContent>
       </Card>
 
@@ -123,7 +128,7 @@ export default function Clients() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Rechercher un client..."
+            placeholder="Rechercher un client (nom, contact, email)..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
@@ -134,7 +139,12 @@ export default function Clients() {
       {/* Table */}
       <Card>
         <CardContent className="p-0">
-          {filteredClients && filteredClients.length > 0 ? (
+          {isLoading ? (
+             <div className="flex items-center justify-center min-h-[400px]">
+               <Loader2 className="h-8 w-8 animate-spin text-primary" />
+             </div>
+          ) : clients && clients.length > 0 ? (
+            <>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -146,7 +156,7 @@ export default function Clients() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredClients.map((client) => (
+                {clients.map((client) => (
                   <TableRow key={client.id}>
                     <TableCell className="font-medium">{client.name}</TableCell>
                     <TableCell>{client.contact_name || "-"}</TableCell>
@@ -210,6 +220,31 @@ export default function Clients() {
                 ))}
               </TableBody>
             </Table>
+            <div className="flex items-center justify-end space-x-2 p-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((old) => Math.max(old - 1, 0))}
+                disabled={page === 0 || isLoading}
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Précédent
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (!isPlaceholderData && clients.length === itemsPerPage) {
+                    setPage((old) => old + 1);
+                  }
+                }}
+                disabled={isPlaceholderData || clients.length < itemsPerPage || isLoading}
+              >
+                Suivant
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+            </>
           ) : (
             <div className="text-center py-12">
               <Users className="mx-auto h-12 w-12 text-muted-foreground" />

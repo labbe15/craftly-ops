@@ -73,7 +73,7 @@ export default function Settings() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("org_settings")
-        .select("*")
+        .select("id, org_id, company_name, vat_number, address, phone, brand_primary, brand_secondary, font, header_bg_url, footer_text, email_from_address, email_sender_name, quote_prefix, invoice_prefix, default_vat_rate, payment_terms_days, quote_followup_days, invoice_overdue_days, smtp_host, smtp_port, smtp_user, smtp_password")
         .limit(1)
         .maybeSingle();
 
