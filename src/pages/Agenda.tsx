@@ -14,8 +14,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Calendar as CalendarIcon, Clock, User, Trash2, Download } from "lucide-react";
-import { format, isSameDay } from "date-fns";
+import { Plus, Calendar as CalendarIcon, Clock, User, Trash2, Download, Loader2 } from "lucide-react";
+import { format, isSameDay, startOfMonth, endOfMonth, addMonths, subMonths } from "date-fns";
 import { fr } from "date-fns/locale";
 import {
   AlertDialog,
@@ -35,11 +35,35 @@ export default function Agenda() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
 
-  // Fetch all events
-  const { data: events, isLoading } = useQuery({
-    queryKey: ["events"],
+  // Fetch only dates for the calendar view (dots) - Optimized: Fetch ~3 months window
+  const { data: eventDates, isLoading: isLoadingDates } = useQuery({
+    queryKey: ["event-dates", currentMonth.getFullYear(), currentMonth.getMonth()],
     queryFn: async () => {
+      const start = startOfMonth(subMonths(currentMonth, 1)).toISOString();
+      const end = endOfMonth(addMonths(currentMonth, 1)).toISOString();
+
+      const { data, error } = await supabase
+        .from("events")
+        .select("start_at")
+        .gte("start_at", start)
+        .lte("start_at", end);
+
+      if (error) throw error;
+      return data?.map(e => new Date(e.start_at)) || [];
+    },
+  });
+
+  // Fetch detailed events only for the selected date
+  const { data: selectedDayEvents, isLoading: isLoadingDay } = useQuery({
+    queryKey: ["events-day", selectedDate.toISOString().split('T')[0]],
+    queryFn: async () => {
+      const startOfDay = new Date(selectedDate);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(selectedDate);
+      endOfDay.setHours(23, 59, 59, 999);
+
       const { data, error } = await supabase
         .from("events")
         .select(`
@@ -48,12 +72,55 @@ export default function Agenda() {
           quote:quotes(number),
           invoice:invoices(number)
         `)
+        .gte("start_at", startOfDay.toISOString())
+        .lte("start_at", endOfDay.toISOString())
         .order("start_at", { ascending: true });
 
       if (error) throw error;
       return data;
     },
   });
+
+  // Fetch upcoming events (limited to 10)
+  const { data: upcomingEvents, isLoading: isLoadingUpcoming } = useQuery({
+    queryKey: ["events-upcoming"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("events")
+        .select(`
+           id, title, start_at, end_at,
+           client:clients(name)
+        `)
+        .gte("start_at", new Date().toISOString())
+        .order("start_at", { ascending: true })
+        .limit(10);
+
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: stats } = useQuery({
+      queryKey: ["events-stats"],
+      queryFn: async () => {
+          const now = new Date();
+          const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0).toISOString();
+          const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).toISOString();
+
+          const { count: total } = await supabase.from("events").select("*", { count: 'exact', head: true });
+          const { count: todayCount } = await supabase.from("events")
+            .select("*", { count: 'exact', head: true })
+            .gte("start_at", startOfToday)
+            .lte("start_at", endOfToday);
+
+          const { count: upcoming } = await supabase.from("events")
+            .select("*", { count: 'exact', head: true })
+            .gt("start_at", now.toISOString());
+
+          return { total: total || 0, today: todayCount || 0, upcoming: upcoming || 0 };
+      }
+  });
+
 
   // Delete event mutation
   const deleteMutation = useMutation({
@@ -66,7 +133,10 @@ export default function Agenda() {
         title: "Événement supprimé",
         description: "L'événement a été supprimé avec succès.",
       });
-      queryClient.invalidateQueries({ queryKey: ["events"] });
+      queryClient.invalidateQueries({ queryKey: ["event-dates"] });
+      queryClient.invalidateQueries({ queryKey: ["events-day"] });
+      queryClient.invalidateQueries({ queryKey: ["events-upcoming"] });
+      queryClient.invalidateQueries({ queryKey: ["events-stats"] });
     },
     onError: (error: any) => {
       toast({
@@ -77,25 +147,18 @@ export default function Agenda() {
     },
   });
 
-  // Get events for selected day
-  const selectedDayEvents = events?.filter((event) =>
-    isSameDay(new Date(event.start_at), selectedDate)
-  );
+  const handleExportICS = async () => {
+      // For export, we might need to fetch all upcoming events or a range.
+      // Let's fetch next 6 months for export.
+      const { data: events } = await supabase
+        .from("events")
+        .select(`*, client:clients(name)`)
+        .gte("start_at", new Date().toISOString());
 
-  // Get dates with events for calendar markers
-  const datesWithEvents = events?.map((event) => new Date(event.start_at)) || [];
-
-  const stats = {
-    total: events?.length || 0,
-    today: events?.filter((e) => isSameDay(new Date(e.start_at), new Date())).length || 0,
-    upcoming: events?.filter((e) => new Date(e.start_at) > new Date()).length || 0,
-  };
-
-  const handleExportICS = () => {
     if (!events || events.length === 0) {
       toast({
         title: "Aucun événement",
-        description: "Il n'y a aucun événement à exporter.",
+        description: "Il n'y a aucun événement futur à exporter.",
         variant: "destructive",
       });
       return;
@@ -136,14 +199,6 @@ export default function Agenda() {
     document.body.removeChild(link);
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <p className="text-muted-foreground">Chargement...</p>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -176,7 +231,7 @@ export default function Agenda() {
             <CalendarIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.total}</div>
+            <div className="text-2xl font-bold">{stats?.total || 0}</div>
           </CardContent>
         </Card>
         <Card>
@@ -187,7 +242,7 @@ export default function Agenda() {
             <Clock className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.today}</div>
+            <div className="text-2xl font-bold">{stats?.today || 0}</div>
           </CardContent>
         </Card>
         <Card>
@@ -196,7 +251,7 @@ export default function Agenda() {
             <CalendarIcon className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.upcoming}</div>
+            <div className="text-2xl font-bold">{stats?.upcoming || 0}</div>
           </CardContent>
         </Card>
       </div>
@@ -213,9 +268,10 @@ export default function Agenda() {
               mode="single"
               selected={selectedDate}
               onSelect={(date) => date && setSelectedDate(date)}
+              onMonthChange={setCurrentMonth}
               locale={fr}
               modifiers={{
-                hasEvent: datesWithEvents,
+                hasEvent: eventDates || [],
               }}
               modifiersStyles={{
                 hasEvent: {
@@ -238,7 +294,9 @@ export default function Agenda() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {selectedDayEvents && selectedDayEvents.length > 0 ? (
+            {isLoadingDay ? (
+                 <div className="flex justify-center p-4"><Loader2 className="animate-spin" /></div>
+            ) : selectedDayEvents && selectedDayEvents.length > 0 ? (
               <div className="space-y-3">
                 {selectedDayEvents.map((event) => (
                   <div
@@ -341,10 +399,12 @@ export default function Agenda() {
       {/* All upcoming events */}
       <Card>
         <CardHeader>
-          <CardTitle>Prochains événements</CardTitle>
+          <CardTitle>Prochains événements (10 prochains)</CardTitle>
         </CardHeader>
         <CardContent>
-          {events && events.filter((e) => new Date(e.start_at) >= new Date()).length > 0 ? (
+            {isLoadingUpcoming ? (
+                 <div className="flex justify-center p-4"><Loader2 className="animate-spin" /></div>
+            ) : upcomingEvents && upcomingEvents.length > 0 ? (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -356,10 +416,7 @@ export default function Agenda() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {events
-                  .filter((e) => new Date(e.start_at) >= new Date())
-                  .slice(0, 10)
-                  .map((event) => (
+                {upcomingEvents.map((event) => (
                     <TableRow
                       key={event.id}
                       className="cursor-pointer hover:bg-muted/50"
