@@ -52,7 +52,7 @@ export default function Clients() {
         .range(page * itemsPerPage, (page + 1) * itemsPerPage - 1);
 
       if (debouncedSearch) {
-        query = query.or(`name.ilike.%${debouncedSearch}%,contact_name.ilike.%${debouncedSearch}%,email.ilike.%${debouncedSearch}%`);
+        query = query.or(`name.ilike.%${debouncedSearch}%,contact_name.ilike.%${debouncedSearch}%,email.ilike.%${debouncedSearch}%,phone.ilike.%${debouncedSearch}%,address.ilike.%${debouncedSearch}%`);
       }
 
       const { data, error } = await query;
