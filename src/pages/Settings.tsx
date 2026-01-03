@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { Loader2, Upload, Image as ImageIcon, X } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface OrgSettings {
   id?: string;
@@ -73,13 +74,14 @@ export default function Settings() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("org_settings")
-        .select("*")
+        .select("id, org_id, company_name, vat_number, address, phone, brand_primary, brand_secondary, font, header_bg_url, footer_text, email_from_address, email_sender_name, quote_prefix, invoice_prefix, default_vat_rate, payment_terms_days, quote_followup_days, invoice_overdue_days, smtp_host, smtp_port, smtp_user, smtp_password")
         .limit(1)
         .maybeSingle();
 
       if (error) throw error;
       return data;
     },
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes to prevent refetching on every tab switch or navigation
   });
 
   // Update form when settings load
@@ -194,27 +196,11 @@ export default function Settings() {
 
     setTestLoading(true);
     try {
-      // Save current settings first to ensure the edge function can access them
-      // Or pass them directly? The edge function seems to fetch from DB based on org_id.
-      // So we must save first or pass credentials.
-      // Let's look at the edge function: it fetches from org_settings.
-      // So we MUST save first.
-
-      // But wait, the user might not want to save invalid settings.
-      // Ideally the edge function should accept credentials in the body for testing.
-      // But based on previous turn, it fetches from DB.
-      // Let's assume we save first or just warn the user.
-
-      // Actually, looking at the previous turn's edge function code I wrote:
-      // It fetches `orgSettings` using `org_id`.
-      // It does NOT accept SMTP credentials in the payload.
-      // So we have to save first.
-
       await saveMutation.mutateAsync(formData);
 
       const { error } = await supabase.functions.invoke("send-email", {
         body: {
-          to: formData.email_from_address || formData.smtp_user, // Send to self
+          to: formData.email_from_address || formData.smtp_user,
           subject: "Test de connexion SMTP Craftly Ops",
           html: "<p>Ceci est un email de test pour vérifier votre configuration SMTP.</p>",
           org_id: formData.org_id,
@@ -232,10 +218,19 @@ export default function Settings() {
     }
   };
 
+  // If loading, show Skeleton instead of full screen spinner for better perceived performance
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-10 w-48" />
+        </div>
+        <div className="space-y-4">
+           <Skeleton className="h-10 w-full" />
+           <div className="space-y-4 pt-4">
+             <Skeleton className="h-[200px] w-full" />
+           </div>
+        </div>
       </div>
     );
   }
@@ -331,6 +326,7 @@ export default function Settings() {
                           src={formData.header_bg_url}
                           alt="Logo entreprise"
                           className="h-24 w-auto object-contain border rounded-lg p-2"
+                          loading="lazy"
                         />
                         <Button
                           type="button"
