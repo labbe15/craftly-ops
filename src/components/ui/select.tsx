@@ -1,13 +1,11 @@
 import * as React from "react";
 import * as SelectPrimitive from "@radix-ui/react-select";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp } from "lucide-react"; // Note: J'ai retiré Check
 
 import { cn } from "@/lib/utils";
 
 const Select = SelectPrimitive.Root;
-
 const SelectGroup = SelectPrimitive.Group;
-
 const SelectValue = SelectPrimitive.Value;
 
 const SelectTrigger = React.forwardRef<
@@ -112,8 +110,8 @@ const SelectItem = React.forwardRef<
   >
     <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
       <SelectPrimitive.ItemIndicator>
-        {/* MODIFICATION CRITIQUE : Remplacement de l'icône Lucide Check par du texte simple */}
-        <span className="font-bold text-xs">✓</span>
+        {/* ICI: C'était une icône Check, maintenant c'est du texte */}
+        <span className="font-bold text-sm">✓</span>
       </SelectPrimitive.ItemIndicator>
     </span>
 
