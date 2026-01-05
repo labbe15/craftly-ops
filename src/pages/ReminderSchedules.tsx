@@ -42,7 +42,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Plus, Edit, Trash2, Calendar, Clock, Mail } from "lucide-react";
+// OFFENSIVE CODE REMOVED: No more lucide-react imports here
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 
@@ -143,8 +143,8 @@ export default function ReminderSchedules() {
     onSuccess: () => {
       toast.success(
         editingSchedule
-          ? "RËgle mise ‡ jour avec succËs"
-          : "RËgle crÈÈe avec succËs"
+          ? "R√®gle mise √† jour avec succ√®s"
+          : "R√®gle cr√©√©e avec succ√®s"
       );
       queryClient.invalidateQueries({ queryKey: ["reminder_schedules"] });
       resetForm();
@@ -165,7 +165,7 @@ export default function ReminderSchedules() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("RËgle supprimÈe avec succËs");
+      toast.success("R√®gle supprim√©e avec succ√®s");
       queryClient.invalidateQueries({ queryKey: ["reminder_schedules"] });
     },
     onError: (error: any) => {
@@ -222,31 +222,31 @@ export default function ReminderSchedules() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">RËgles de Relances Automatiques</h1>
+          <h1 className="text-3xl font-bold">R√®gles de Relances Automatiques</h1>
           <p className="text-muted-foreground">
-            Configurez des relances automatiques rÈcurrentes pour vos devis et factures
+            Configurez des relances automatiques r√©currentes pour vos devis et factures
           </p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={resetForm}>
-              <Plus className="h-4 w-4 mr-2" />
-              Nouvelle rËgle
+              <span className="mr-2 font-bold">+</span>
+              Nouvelle r√®gle
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
-                {editingSchedule ? "Modifier la rËgle" : "Nouvelle rËgle de relance"}
+                {editingSchedule ? "Modifier la r√®gle" : "Nouvelle r√®gle de relance"}
               </DialogTitle>
               <DialogDescription>
-                Configurez une rËgle de relance automatique qui s'exÈcutera selon la frÈquence dÈfinie
+                Configurez une r√®gle de relance automatique qui s'ex√©cutera selon la fr√©quence d√©finie
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Nom de la rËgle *</Label>
+                <Label htmlFor="name">Nom de la r√®gle *</Label>
                 <Input
                   id="name"
                   value={name}
@@ -275,14 +275,14 @@ export default function ReminderSchedules() {
                     checked={isActive}
                     onCheckedChange={setIsActive}
                   />
-                  <Label htmlFor="is_active">RËgle active</Label>
+                  <Label htmlFor="is_active">R√®gle active</Label>
                 </div>
               </div>
 
               {type === "quote" ? (
                 <div className="space-y-2">
                   <Label htmlFor="days_after_sent">
-                    Jours aprËs envoi sans rÈponse *
+                    Jours apr√®s envoi sans r√©ponse *
                   </Label>
                   <Input
                     id="days_after_sent"
@@ -293,13 +293,13 @@ export default function ReminderSchedules() {
                     placeholder="7"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Relancer les devis envoyÈs depuis X jours sans acceptation
+                    Relancer les devis envoy√©s depuis X jours sans acceptation
                   </p>
                 </div>
               ) : (
                 <div className="space-y-2">
                   <Label htmlFor="days_after_due">
-                    Jours aprËs ÈchÈance *
+                    Jours apr√®s √©ch√©ance *
                   </Label>
                   <Input
                     id="days_after_due"
@@ -310,13 +310,13 @@ export default function ReminderSchedules() {
                     placeholder="3"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Relancer les factures X jours aprËs la date d'ÈchÈance
+                    Relancer les factures X jours apr√®s la date d'√©ch√©ance
                   </p>
                 </div>
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="frequency">FrÈquence de relance *</Label>
+                <Label htmlFor="frequency">Fr√©quence de relance *</Label>
                 <Select
                   value={frequency}
                   onValueChange={(v: any) => setFrequency(v)}
@@ -359,7 +359,7 @@ export default function ReminderSchedules() {
                   placeholder="3"
                 />
                 <p className="text-xs text-muted-foreground">
-                  ArrÍter automatiquement aprËs X relances envoyÈes
+                  Arr√™ter automatiquement apr√®s X relances envoy√©es
                 </p>
               </div>
 
@@ -383,7 +383,7 @@ export default function ReminderSchedules() {
                   placeholder="Bonjour,&#10;&#10;Nous nous permettons de vous relancer concernant...&#10;&#10;Variables disponibles: {{client_name}}, {{number}}, {{amount}}"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Si vide, un template par dÈfaut sera utilisÈ
+                  Si vide, un template par d√©faut sera utilis√©
                 </p>
               </div>
             </div>
@@ -409,29 +409,23 @@ export default function ReminderSchedules() {
         </Dialog>
       </div>
 
-      {/* Info Card */}
+      {/* Info Card - Icons Removed */}
       <Card className="bg-blue-50 border-blue-200">
         <CardHeader>
           <CardTitle className="text-blue-900 flex items-center gap-2">
-            <Mail className="h-5 w-5" />
-            Comment Áa fonctionne ?
+            <span>‚ÑπÔ∏è</span>
+            Comment √ßa fonctionne ?
           </CardTitle>
         </CardHeader>
         <CardContent className="text-sm text-blue-800 space-y-2">
-          <p>
-            " Les rËgles s'exÈcutent automatiquement selon la frÈquence dÈfinie
-          </p>
-          <p>
-            " Chaque rËgle vÈrifie les devis/factures qui correspondent aux critËres
-          </p>
-          <p>
-            " Un email de relance est envoyÈ automatiquement aux clients concernÈs
-          </p>
-          <p>
-            " Le systËme arrÍte aprËs le nombre maximum de relances configurÈ
-          </p>
+          <ul className="list-disc pl-4 space-y-1">
+            <li>Les r√®gles s'ex√©cutent automatiquement selon la fr√©quence d√©finie</li>
+            <li>Chaque r√®gle v√©rifie les devis/factures qui correspondent aux crit√®res</li>
+            <li>Un email de relance est envoy√© automatiquement aux clients concern√©s</li>
+            <li>Le syst√®me arr√™te apr√®s le nombre maximum de relances configur√©</li>
+          </ul>
           <p className="font-medium pt-2">
-            † NÈcessite la configuration d'une Edge Function Supabase pour l'exÈcution automatique
+            Note : N√©cessite la configuration d'une Edge Function Supabase pour l'ex√©cution automatique
           </p>
         </CardContent>
       </Card>
@@ -439,9 +433,9 @@ export default function ReminderSchedules() {
       {/* Schedules List */}
       <Card>
         <CardHeader>
-          <CardTitle>RËgles configurÈes</CardTitle>
+          <CardTitle>R√®gles configur√©es</CardTitle>
           <CardDescription>
-            {schedules?.length || 0} rËgle(s) de relance automatique
+            {schedules?.length || 0} r√®gle(s) de relance automatique
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -454,7 +448,7 @@ export default function ReminderSchedules() {
                   <TableHead>Nom</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Condition</TableHead>
-                  <TableHead>FrÈquence</TableHead>
+                  <TableHead>Fr√©quence</TableHead>
                   <TableHead>Max</TableHead>
                   <TableHead>Statut</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -471,8 +465,8 @@ export default function ReminderSchedules() {
                     </TableCell>
                     <TableCell className="text-sm">
                       {schedule.type === "quote"
-                        ? `AprËs ${schedule.days_after_sent} jours`
-                        : `${schedule.days_after_due} jours aprËs ÈchÈance`}
+                        ? `Apr√®s ${schedule.days_after_sent} jours`
+                        : `${schedule.days_after_due} jours apr√®s √©ch√©ance`}
                     </TableCell>
                     <TableCell className="text-sm">
                       {getFrequencyLabel(schedule.frequency, schedule.frequency_days)}
@@ -490,20 +484,20 @@ export default function ReminderSchedules() {
                           size="icon"
                           onClick={() => openEditDialog(schedule)}
                         >
-                          <Edit className="h-4 w-4" />
+                          <span className="text-xs">Edit</span>
                         </Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button variant="ghost" size="icon">
-                              <Trash2 className="h-4 w-4 text-destructive" />
+                              <span className="text-xs text-destructive">Suppr</span>
                             </Button>
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Supprimer la rËgle</AlertDialogTitle>
+                              <AlertDialogTitle>Supprimer la r√®gle</AlertDialogTitle>
                               <AlertDialogDescription>
-                                 tes-vous s˚r de vouloir supprimer la rËgle "{schedule.name}" ?
-                                Cette action est irrÈversible.
+                                √ätes-vous s√ªr de vouloir supprimer la r√®gle "{schedule.name}" ?
+                                Cette action est irr√©versible.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
@@ -525,9 +519,11 @@ export default function ReminderSchedules() {
             </Table>
           ) : (
             <div className="text-center py-8">
-              <Calendar className="mx-auto h-12 w-12 text-muted-foreground" />
+              <div className="mx-auto h-12 w-12 text-muted-foreground flex items-center justify-center text-2xl">
+                üìÖ
+              </div>
               <p className="mt-4 text-sm text-muted-foreground">
-                Aucune rËgle configurÈe pour le moment
+                Aucune r√®gle configur√©e pour le moment
               </p>
               <Button
                 className="mt-4"
@@ -537,8 +533,8 @@ export default function ReminderSchedules() {
                   setDialogOpen(true);
                 }}
               >
-                <Plus className="h-4 w-4 mr-2" />
-                CrÈer une rËgle
+                <span className="mr-2">+</span>
+                Cr√©er une r√®gle
               </Button>
             </div>
           )}
