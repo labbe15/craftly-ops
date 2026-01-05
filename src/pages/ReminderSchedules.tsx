@@ -42,7 +42,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-// OFFENSIVE CODE REMOVED: No more lucide-react imports here
+// STOP : PLUS D'ICONES LUCIDE ICI
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 
@@ -69,7 +69,6 @@ export default function ReminderSchedules() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState<ReminderSchedule | null>(null);
 
-  // Form state
   const [name, setName] = useState("");
   const [type, setType] = useState<"quote" | "invoice">("quote");
   const [isActive, setIsActive] = useState(true);
@@ -81,21 +80,15 @@ export default function ReminderSchedules() {
   const [emailSubject, setEmailSubject] = useState("");
   const [emailBody, setEmailBody] = useState("");
 
-  // Fetch org settings
   const { data: orgSettings } = useQuery({
     queryKey: ["org_settings"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("org_settings")
-        .select("org_id")
-        .limit(1)
-        .single();
+      const { data, error } = await supabase.from("org_settings").select("org_id").limit(1).single();
       if (error) throw error;
       return data;
     },
   });
 
-  // Fetch schedules
   const { data: schedules, isLoading } = useQuery({
     queryKey: ["reminder_schedules"],
     queryFn: async () => {
@@ -108,11 +101,9 @@ export default function ReminderSchedules() {
     },
   });
 
-  // Create/Update mutation
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (!orgSettings?.org_id) throw new Error("Org ID not found");
-
       const scheduleData = {
         org_id: orgSettings.org_id,
         name,
@@ -128,49 +119,32 @@ export default function ReminderSchedules() {
       };
 
       if (editingSchedule) {
-        const { error } = await supabase
-          .from("reminder_schedules")
-          .update(scheduleData)
-          .eq("id", editingSchedule.id);
+        const { error } = await supabase.from("reminder_schedules").update(scheduleData).eq("id", editingSchedule.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase
-          .from("reminder_schedules")
-          .insert(scheduleData);
+        const { error } = await supabase.from("reminder_schedules").insert(scheduleData);
         if (error) throw error;
       }
     },
     onSuccess: () => {
-      toast.success(
-        editingSchedule
-          ? "Règle mise à jour avec succès"
-          : "Règle créée avec succès"
-      );
+      toast.success(editingSchedule ? "Règle mise à jour" : "Règle créée");
       queryClient.invalidateQueries({ queryKey: ["reminder_schedules"] });
       resetForm();
       setDialogOpen(false);
     },
-    onError: (error: any) => {
-      toast.error(`Erreur : ${error.message}`);
-    },
+    onError: (error: any) => toast.error(`Erreur : ${error.message}`),
   });
 
-  // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("reminder_schedules")
-        .delete()
-        .eq("id", id);
+      const { error } = await supabase.from("reminder_schedules").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Règle supprimée avec succès");
+      toast.success("Règle supprimée");
       queryClient.invalidateQueries({ queryKey: ["reminder_schedules"] });
     },
-    onError: (error: any) => {
-      toast.error(`Erreur : ${error.message}`);
-    },
+    onError: (error: any) => toast.error(`Erreur : ${error.message}`),
   });
 
   const resetForm = () => {
@@ -204,274 +178,139 @@ export default function ReminderSchedules() {
 
   const getFrequencyLabel = (freq: string, days?: number) => {
     switch (freq) {
-      case "once":
-        return "Une seule fois";
-      case "daily":
-        return "Tous les jours";
-      case "weekly":
-        return "Toutes les semaines";
-      case "every_n_days":
-        return `Tous les ${days || 7} jours`;
-      default:
-        return freq;
+      case "once": return "Une seule fois";
+      case "daily": return "Tous les jours";
+      case "weekly": return "Toutes les semaines";
+      case "every_n_days": return `Tous les ${days || 7} jours`;
+      default: return freq;
     }
   };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Règles de Relances Automatiques</h1>
-          <p className="text-muted-foreground">
-            Configurez des relances automatiques récurrentes pour vos devis et factures
-          </p>
+          <h1 className="text-3xl font-bold">Règles de Relances</h1>
+          <p className="text-muted-foreground">Gestion des relances automatiques</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={resetForm}>
-              <span className="mr-2 font-bold">+</span>
-              Nouvelle règle
+              <span className="mr-2 font-bold">+</span> Nouvelle règle
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>
-                {editingSchedule ? "Modifier la règle" : "Nouvelle règle de relance"}
-              </DialogTitle>
-              <DialogDescription>
-                Configurez une règle de relance automatique qui s'exécutera selon la fréquence définie
-              </DialogDescription>
+              <DialogTitle>{editingSchedule ? "Modifier" : "Nouvelle règle"}</DialogTitle>
             </DialogHeader>
-
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Nom de la règle *</Label>
-                <Input
-                  id="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Ex: Relance devis 7 jours"
-                />
+                <Label>Nom</Label>
+                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nom de la règle" />
               </div>
-
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="type">Type *</Label>
+                  <Label>Type</Label>
                   <Select value={type} onValueChange={(v: any) => setType(v)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="quote">Devis</SelectItem>
                       <SelectItem value="invoice">Facture</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-
                 <div className="flex items-center space-x-2 pt-8">
-                  <Switch
-                    id="is_active"
-                    checked={isActive}
-                    onCheckedChange={setIsActive}
-                  />
-                  <Label htmlFor="is_active">Règle active</Label>
+                  <Switch checked={isActive} onCheckedChange={setIsActive} />
+                  <Label>Active</Label>
                 </div>
               </div>
-
+              
               {type === "quote" ? (
                 <div className="space-y-2">
-                  <Label htmlFor="days_after_sent">
-                    Jours après envoi sans réponse *
-                  </Label>
-                  <Input
-                    id="days_after_sent"
-                    type="number"
-                    min="1"
-                    value={daysAfterSent}
-                    onChange={(e) => setDaysAfterSent(e.target.value)}
-                    placeholder="7"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Relancer les devis envoyés depuis X jours sans acceptation
-                  </p>
+                  <Label>Jours après envoi</Label>
+                  <Input type="number" value={daysAfterSent} onChange={(e) => setDaysAfterSent(e.target.value)} />
                 </div>
               ) : (
                 <div className="space-y-2">
-                  <Label htmlFor="days_after_due">
-                    Jours après échéance *
-                  </Label>
-                  <Input
-                    id="days_after_due"
-                    type="number"
-                    min="0"
-                    value={daysAfterDue}
-                    onChange={(e) => setDaysAfterDue(e.target.value)}
-                    placeholder="3"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Relancer les factures X jours après la date d'échéance
-                  </p>
+                  <Label>Jours après échéance</Label>
+                  <Input type="number" value={daysAfterDue} onChange={(e) => setDaysAfterDue(e.target.value)} />
                 </div>
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="frequency">Fréquence de relance *</Label>
-                <Select
-                  value={frequency}
-                  onValueChange={(v: any) => setFrequency(v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
+                <Label>Fréquence</Label>
+                <Select value={frequency} onValueChange={(v: any) => setFrequency(v)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="once">Une seule fois</SelectItem>
-                    <SelectItem value="daily">Tous les jours</SelectItem>
-                    <SelectItem value="weekly">Toutes les semaines</SelectItem>
-                    <SelectItem value="every_n_days">Tous les X jours</SelectItem>
+                    <SelectItem value="once">Une fois</SelectItem>
+                    <SelectItem value="daily">Quotidien</SelectItem>
+                    <SelectItem value="weekly">Hebdo</SelectItem>
+                    <SelectItem value="every_n_days">Personnalisé</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               {frequency === "every_n_days" && (
                 <div className="space-y-2">
-                  <Label htmlFor="frequency_days">Nombre de jours *</Label>
-                  <Input
-                    id="frequency_days"
-                    type="number"
-                    min="1"
-                    value={frequencyDays}
-                    onChange={(e) => setFrequencyDays(e.target.value)}
-                    placeholder="7"
-                  />
+                   <Label>Intervalle (jours)</Label>
+                   <Input type="number" value={frequencyDays} onChange={(e) => setFrequencyDays(e.target.value)} />
                 </div>
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="max_reminders">Nombre maximum de relances *</Label>
-                <Input
-                  id="max_reminders"
-                  type="number"
-                  min="1"
-                  max="10"
-                  value={maxReminders}
-                  onChange={(e) => setMaxReminders(e.target.value)}
-                  placeholder="3"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Arrêter automatiquement après X relances envoyées
-                </p>
+                <Label>Max relances</Label>
+                <Input type="number" value={maxReminders} onChange={(e) => setMaxReminders(e.target.value)} />
               </div>
-
               <div className="space-y-2">
-                <Label htmlFor="email_subject">Sujet de l'email (optionnel)</Label>
-                <Input
-                  id="email_subject"
-                  value={emailSubject}
-                  onChange={(e) => setEmailSubject(e.target.value)}
-                  placeholder="Relance concernant votre {{type}} {{number}}"
-                />
+                <Label>Sujet Email</Label>
+                <Input value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} />
               </div>
-
               <div className="space-y-2">
-                <Label htmlFor="email_body">Corps de l'email (optionnel)</Label>
-                <Textarea
-                  id="email_body"
-                  value={emailBody}
-                  onChange={(e) => setEmailBody(e.target.value)}
-                  rows={4}
-                  placeholder="Bonjour,&#10;&#10;Nous nous permettons de vous relancer concernant...&#10;&#10;Variables disponibles: {{client_name}}, {{number}}, {{amount}}"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Si vide, un template par défaut sera utilisé
-                </p>
+                <Label>Message</Label>
+                <Textarea value={emailBody} onChange={(e) => setEmailBody(e.target.value)} rows={4} />
               </div>
             </div>
-
             <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  resetForm();
-                  setDialogOpen(false);
-                }}
-              >
-                Annuler
-              </Button>
-              <Button
-                onClick={() => saveMutation.mutate()}
-                disabled={!name || saveMutation.isPending}
-              >
-                {saveMutation.isPending ? "Enregistrement..." : "Enregistrer"}
-              </Button>
+              <Button variant="outline" onClick={() => setDialogOpen(false)}>Annuler</Button>
+              <Button onClick={() => saveMutation.mutate()} disabled={!name}>Enregistrer</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
 
-      {/* Info Card - Icons Removed */}
       <Card className="bg-blue-50 border-blue-200">
         <CardHeader>
-          <CardTitle className="text-blue-900 flex items-center gap-2">
-            <span>ℹ️</span>
-            Comment ça fonctionne ?
-          </CardTitle>
+          <CardTitle className="text-blue-900 text-lg">Fonctionnement</CardTitle>
         </CardHeader>
-        <CardContent className="text-sm text-blue-800 space-y-2">
-          <ul className="list-disc pl-4 space-y-1">
-            <li>Les règles s'exécutent automatiquement selon la fréquence définie</li>
-            <li>Chaque règle vérifie les devis/factures qui correspondent aux critères</li>
-            <li>Un email de relance est envoyé automatiquement aux clients concernés</li>
-            <li>Le système arrête après le nombre maximum de relances configuré</li>
-          </ul>
-          <p className="font-medium pt-2">
-            Note : Nécessite la configuration d'une Edge Function Supabase pour l'exécution automatique
-          </p>
+        <CardContent className="text-sm text-blue-800">
+           <ul className="list-disc pl-4">
+             <li>Exécution automatique selon la fréquence.</li>
+             <li>Envoi d'email aux clients concernés.</li>
+             <li>Arrêt après le nombre max de relances.</li>
+           </ul>
         </CardContent>
       </Card>
 
-      {/* Schedules List */}
       <Card>
-        <CardHeader>
-          <CardTitle>Règles configurées</CardTitle>
-          <CardDescription>
-            {schedules?.length || 0} règle(s) de relance automatique
-          </CardDescription>
-        </CardHeader>
+        <CardHeader><CardTitle>Règles ({schedules?.length || 0})</CardTitle></CardHeader>
         <CardContent>
-          {isLoading ? (
-            <p className="text-center text-muted-foreground py-8">Chargement...</p>
-          ) : schedules && schedules.length > 0 ? (
+          {isLoading ? <p>Chargement...</p> : (
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Nom</TableHead>
                   <TableHead>Type</TableHead>
-                  <TableHead>Condition</TableHead>
-                  <TableHead>Fréquence</TableHead>
-                  <TableHead>Max</TableHead>
+                  <TableHead>Détail</TableHead>
                   <TableHead>Statut</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {schedules.map((schedule) => (
+                {schedules?.map((schedule) => (
                   <TableRow key={schedule.id}>
                     <TableCell className="font-medium">{schedule.name}</TableCell>
-                    <TableCell>
-                      <Badge variant={schedule.type === "quote" ? "outline" : "secondary"}>
-                        {schedule.type === "quote" ? "Devis" : "Facture"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {schedule.type === "quote"
-                        ? `Après ${schedule.days_after_sent} jours`
-                        : `${schedule.days_after_due} jours après échéance`}
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {getFrequencyLabel(schedule.frequency, schedule.frequency_days)}
-                    </TableCell>
-                    <TableCell>{schedule.max_reminders}x</TableCell>
+                    <TableCell><Badge variant="outline">{schedule.type === "quote" ? "Devis" : "Facture"}</Badge></TableCell>
+                    <TableCell className="text-sm">{getFrequencyLabel(schedule.frequency, schedule.frequency_days)}</TableCell>
                     <TableCell>
                       <Badge variant={schedule.is_active ? "default" : "secondary"}>
                         {schedule.is_active ? "Active" : "Inactive"}
@@ -479,35 +318,19 @@ export default function ReminderSchedules() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => openEditDialog(schedule)}
-                        >
-                          <span className="text-xs">Edit</span>
-                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => openEditDialog(schedule)}>Edit</Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <span className="text-xs text-destructive">Suppr</span>
-                            </Button>
+                            <Button variant="ghost" size="sm" className="text-destructive">Suppr</Button>
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Supprimer la règle</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Êtes-vous sûr de vouloir supprimer la règle "{schedule.name}" ?
-                                Cette action est irréversible.
-                              </AlertDialogDescription>
+                              <AlertDialogTitle>Supprimer ?</AlertDialogTitle>
+                              <AlertDialogDescription>Irréversible.</AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                              <AlertDialogCancel>Annuler</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => deleteMutation.mutate(schedule.id)}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                              >
-                                Supprimer
-                              </AlertDialogAction>
+                              <AlertDialogCancel>Non</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => deleteMutation.mutate(schedule.id)}>Oui</AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>
@@ -517,26 +340,6 @@ export default function ReminderSchedules() {
                 ))}
               </TableBody>
             </Table>
-          ) : (
-            <div className="text-center py-8">
-              <div className="mx-auto h-12 w-12 text-muted-foreground flex items-center justify-center text-2xl">
-                📅
-              </div>
-              <p className="mt-4 text-sm text-muted-foreground">
-                Aucune règle configurée pour le moment
-              </p>
-              <Button
-                className="mt-4"
-                variant="outline"
-                onClick={() => {
-                  resetForm();
-                  setDialogOpen(true);
-                }}
-              >
-                <span className="mr-2">+</span>
-                Créer une règle
-              </Button>
-            </div>
           )}
         </CardContent>
       </Card>
